@@ -298,7 +298,7 @@ public class RaopAudioHandler extends SimpleChannelUpstreamHandler {
 	 * <li> {@code <attribute>=aesiv} 
 	 * </ul>
 	 */
-	private static Pattern s_pattern_sdp_a = Pattern.compile("^([a-z]+):(.*)$");
+	private static Pattern s_pattern_sdp_a = Pattern.compile("^([^:]+):(.*)$");
 	
 	/**
 	 * SDP {@code a} attribute {@code rtpmap}. Format is
@@ -630,6 +630,8 @@ public class RaopAudioHandler extends SimpleChannelUpstreamHandler {
 				final String value = m_parameter.group(2);
 
 				if ("volume".equals(name)) {
+					s_logger.info("Volume set to " + value);
+					
 					/* Set output gain */
 					if (m_audioOutputQueue != null)
 						m_audioOutputQueue.setGain(Float.parseFloat(value));
