@@ -45,7 +45,7 @@ public class RtspLoggingHandler extends SimpleChannelHandler
 	{
 		final HttpRequest req = (HttpRequest)evt.getMessage();
 
-		final Level level = Level.FINE;
+		final Level level = Level.INFO;
 		if (s_logger.isLoggable(level)) {
 			final String content = req.getContent().toString(Charset.defaultCharset());
 
@@ -63,7 +63,7 @@ public class RtspLoggingHandler extends SimpleChannelHandler
 				s.append("\n");
 			}
 			s.append(content);
-			s_logger.log(Level.FINE, s.toString());
+			s_logger.log(Level.INFO, s.toString());
 		}
 
 		super.messageReceived(ctx, evt);
@@ -75,7 +75,7 @@ public class RtspLoggingHandler extends SimpleChannelHandler
 	{
 		final HttpResponse resp = (HttpResponse)evt.getMessage();
 
-		final Level level = Level.FINE;
+		final Level level = Level.INFO;
 		if (s_logger.isLoggable(level)) {
 			final StringBuilder s = new StringBuilder();
 			s.append("<");
@@ -90,7 +90,7 @@ public class RtspLoggingHandler extends SimpleChannelHandler
 				s.append(header.getValue());
 				s.append("\n");
 			}
-			s_logger.log(Level.FINE, s.toString());
+			s_logger.log(Level.INFO, s.toString());
 		}
 
 		super.writeRequested(ctx, evt);

@@ -35,7 +35,7 @@ public class LogFormatter extends Formatter {
 
 		s.append(DateFormater.format(new Date(record.getMillis())));
 		s.append(" ");
-		s.append(record.getLevel() != null ? record.getLevel().getName() : "?");
+		s.append(record.getLevel() != null ? "["+record.getLevel().getName()+"]" : "?");
 		s.append(" ");
 		s.append(record.getLoggerName() != null ? record.getLoggerName() : "");
 		s.append(" ");

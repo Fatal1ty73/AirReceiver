@@ -38,8 +38,8 @@ public class RtpLoggingHandler extends SimpleChannelHandler {
 			final RtpPacket packet = (RtpPacket)evt.getMessage();
 
 			final Level level = getPacketLevel(packet);
-			if (s_logger.isLoggable(level))
-				s_logger.log(level, evt.getRemoteAddress() + "> " + packet.toString());
+//			if (s_logger.isLoggable(level))
+				s_logger.log(Level.INFO, evt.getRemoteAddress() + "> " + packet.toString());
 		}
 
 		super.messageReceived(ctx, evt);
@@ -53,8 +53,8 @@ public class RtpLoggingHandler extends SimpleChannelHandler {
 			final RtpPacket packet = (RtpPacket)evt.getMessage();
 
 			final Level level = getPacketLevel(packet);
-			if (s_logger.isLoggable(level))
-				s_logger.log(level, evt.getRemoteAddress() + "< " + packet.toString());
+//			if (s_logger.isLoggable(level))
+				s_logger.log(Level.INFO, evt.getRemoteAddress() + "< " + packet.toString());
 		}
 
 		super.writeRequested(ctx, evt);
