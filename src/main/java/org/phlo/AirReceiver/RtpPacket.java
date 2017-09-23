@@ -17,7 +17,7 @@
 
 package org.phlo.AirReceiver;
 
-import org.jboss.netty.buffer.*;
+import io.netty.buffer.*;
 
 /**
  * Basic RTP packet as described by RFC 3550
@@ -25,26 +25,26 @@ import org.jboss.netty.buffer.*;
 public class RtpPacket {
 	public static final int Length = 4;
 
-	final private ChannelBuffer m_buffer;
+	final private ByteBuf m_buffer;
 
 	protected RtpPacket(final int size) {
 		assert size >= Length;
-		m_buffer = ChannelBuffers.buffer(size);
+		m_buffer = Unpooled.buffer(size);
 		m_buffer.writeZero(size);
 		setVersion((byte)2);
 	}
 
-	public RtpPacket(final ChannelBuffer buffer) throws ProtocolException {
+	public RtpPacket(final ByteBuf buffer) throws ProtocolException {
 		m_buffer = buffer;
 	}
 
-	public RtpPacket(final ChannelBuffer buffer, final int minimumSize) throws ProtocolException {
+	public RtpPacket(final ByteBuf buffer, final int minimumSize) throws ProtocolException {
 		this(buffer);
 		if (buffer.capacity() < minimumSize)
 			throw new InvalidPacketException("Packet had invalid size " + buffer.capacity() + " instead of at least " + minimumSize);
 	}
 
-	public ChannelBuffer getBuffer() {
+	public ByteBuf getBuffer() {
 		return m_buffer;
 	}
 

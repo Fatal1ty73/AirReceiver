@@ -21,14 +21,16 @@ import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
-import org.jboss.netty.buffer.*;
-import org.jboss.netty.channel.*;
-import org.jboss.netty.handler.codec.oneone.OneToOneDecoder;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.MessageToMessageDecoder;
+
+import java.util.List;
 
 /**
  * De-crypt AES encoded audio data
  */
-public class RaopRtpAudioDecryptionHandler extends OneToOneDecoder {
+public class RaopRtpAudioDecryptionHandler extends MessageToMessageDecoder {
 	/**
 	 *  The AES cipher. We request no padding because RAOP/AirTunes only encrypts full
 	 * block anyway and leaves the trailing byte unencrypted
@@ -50,12 +52,11 @@ public class RaopRtpAudioDecryptionHandler extends OneToOneDecoder {
 	}
 
 	@Override
-	protected synchronized Object decode(final ChannelHandlerContext ctx, final Channel channel, final Object msg)
-		throws Exception
+	protected void decode(ChannelHandlerContext ctx, Object msg, List out) throws Exception
 	{
 		if (msg instanceof RaopRtpPacket.Audio) {
 			final RaopRtpPacket.Audio audioPacket = (RaopRtpPacket.Audio)msg;
-			final ChannelBuffer audioPayload = audioPacket.getPayload();
+			final ByteBuf audioPayload = audioPacket.getPayload();
 
 			/* Cipher is restarted for every packet. We simply overwrite the
 			 * encrypted data with the corresponding plain text
@@ -69,6 +70,7 @@ public class RaopRtpAudioDecryptionHandler extends OneToOneDecoder {
 			}
 		}
 
-		return msg;
+		out.add(msg);
 	}
+
 }

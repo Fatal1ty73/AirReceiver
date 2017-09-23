@@ -22,14 +22,19 @@ import java.nio.ByteBuffer;
 
 import javax.crypto.*;
 
-import org.jboss.netty.channel.*;
-import org.jboss.netty.handler.codec.http.*;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPromise;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponse;
 
 /**
  * Adds an {@code Apple-Response} header to a response if the request contain
  * an {@code Apple-Request} header.
  */
-public class RaopRtspChallengeResponseHandler extends SimpleChannelHandler
+public class RaopRtspChallengeResponseHandler extends SimpleChannelInboundHandler<FullHttpRequest>
 {
 	private static final String HeaderChallenge = "Apple-Challenge";
 	private static final String HeaderSignature = "Apple-Response";
@@ -47,15 +52,13 @@ public class RaopRtspChallengeResponseHandler extends SimpleChannelHandler
 	}
 
 	@Override
-	public void messageReceived(final ChannelHandlerContext ctx, final MessageEvent evt)
+	public void messageReceived(final ChannelHandlerContext ctx, final FullHttpRequest msg)
 		throws Exception
 	{
-		final HttpRequest req = (HttpRequest)evt.getMessage();
-
 		synchronized(this) {
-			if (req.containsHeader(HeaderChallenge)) {
+			if (msg.headers().contains(HeaderChallenge)) {
 				/* The challenge is sent without padding! */
-				final byte[] challenge = Base64.decodeUnpadded(req.getHeader(HeaderChallenge));
+				final byte[] challenge = Base64.decodeUnpadded(msg.headers().getAndConvert(HeaderChallenge));
 
 				/* Verify that we got 16 bytes */
 				if (challenge.length != 16)
@@ -65,7 +68,7 @@ public class RaopRtspChallengeResponseHandler extends SimpleChannelHandler
 				 * Both are required to compute the response
 				 */
 				m_challenge = challenge;
-				m_localAddress = ((InetSocketAddress)ctx.getChannel().getLocalAddress()).getAddress();
+				m_localAddress = ((InetSocketAddress)ctx.channel().localAddress()).getAddress();
 			}
 			else {
 				/* Forget last challenge */
@@ -73,15 +76,13 @@ public class RaopRtspChallengeResponseHandler extends SimpleChannelHandler
 				m_localAddress = null;
 			}
 		}
-
-		super.messageReceived(ctx, evt);
+msg.retain();
+ctx.fireChannelRead(msg);
 	}
 
 	@Override
-	public void writeRequested(final ChannelHandlerContext ctx, final MessageEvent evt)
-		throws Exception
-	{
-		final HttpResponse resp = (HttpResponse)evt.getMessage();
+	public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+		final FullHttpResponse resp = (FullHttpResponse)msg;
 
 		synchronized(this) {
 			if (m_challenge != null) {
@@ -91,7 +92,7 @@ public class RaopRtspChallengeResponseHandler extends SimpleChannelHandler
 					 */
 					final String sig = Base64.encodePadded(getSignature());
 
-					resp.setHeader(HeaderSignature, sig);
+					resp.headers().set(HeaderSignature, sig);
 				}
 				finally {
 					/* Forget last challenge */
@@ -100,9 +101,9 @@ public class RaopRtspChallengeResponseHandler extends SimpleChannelHandler
 				}
 			}
 		}
-
-		super.writeRequested(ctx, evt);
+		super.write(ctx, msg, promise);
 	}
+
 
 	private byte[] getSignature() {
 		final ByteBuffer sigData = ByteBuffer.allocate(16 /* challenge */ + 16 /* ipv6 address */ + 6 /* hw address*/);

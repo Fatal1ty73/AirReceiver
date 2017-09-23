@@ -20,17 +20,20 @@ package org.phlo.AirReceiver;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.jboss.netty.channel.*;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerAdapter;
+import io.netty.channel.ChannelHandlerContext;
 
 /**
  * Logs exceptions thrown by other channel handlers
  */
-public class ExceptionLoggingHandler extends SimpleChannelHandler {
+@ChannelHandler.Sharable
+public class ExceptionLoggingHandler extends ChannelHandlerAdapter {
 	private static Logger s_logger = Logger.getLogger(ExceptionLoggingHandler.class.getName());
 
 	@Override
-	public void exceptionCaught(final ChannelHandlerContext ctx, final ExceptionEvent evt) throws Exception {
-		super.exceptionCaught(ctx, evt);
-		s_logger.log(Level.WARNING, "Handler raised exception", evt.getCause());
+	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+		s_logger.log(Level.WARNING, "Handler raised exception", cause);
 	}
+
 }

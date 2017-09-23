@@ -17,9 +17,13 @@
 
 package org.phlo.AirReceiver;
 
-import org.jboss.netty.channel.*;
-import org.jboss.netty.handler.codec.http.*;
-import org.jboss.netty.handler.codec.rtsp.*;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.rtsp.RtspHeaderNames;
+import io.netty.handler.codec.rtsp.RtspMethods;
+import io.netty.handler.codec.rtsp.RtspResponseStatuses;
+import io.netty.handler.codec.rtsp.RtspVersions;
 
 /**
  * Handles RTSP OPTIONS requests.
@@ -28,29 +32,31 @@ import org.jboss.netty.handler.codec.rtsp.*;
  * by including a Apple-Request header and expecting an appropriate
  * Apple-Response
  */
-public class RaopRtspOptionsHandler extends SimpleChannelUpstreamHandler {
+public class RaopRtspOptionsHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 	private static final String Options =
-		RaopRtspMethods.ANNOUNCE.getName() + ", " +
-		RaopRtspMethods.SETUP.getName() + ", " +
-		RaopRtspMethods.RECORD.getName() + ", " +
-		RaopRtspMethods.PAUSE.getName() + ", " +
-		RaopRtspMethods.FLUSH.getName() + ", " +
-		RtspMethods.TEARDOWN.getName() + ", " +
-		RaopRtspMethods.OPTIONS.getName() + ", " +
-		RaopRtspMethods.GET_PARAMETER.getName() + ", " +
-		RaopRtspMethods.SET_PARAMETER.getName();
+		RaopRtspMethods.ANNOUNCE.name() + ", " +
+		RaopRtspMethods.SETUP.name() + ", " +
+		RaopRtspMethods.RECORD.name() + ", " +
+		RaopRtspMethods.PAUSE.name() + ", " +
+		RaopRtspMethods.FLUSH.name() + ", " +
+		RtspMethods.TEARDOWN.name() + ", " +
+		RaopRtspMethods.OPTIONS.name() + ", " +
+		RaopRtspMethods.GET_PARAMETER.name() + ", " +
+		RaopRtspMethods.SET_PARAMETER.name();
 
 	@Override
-	public void messageReceived(final ChannelHandlerContext ctx, final MessageEvent evt) throws Exception {
-		final HttpRequest req = (HttpRequest)evt.getMessage();
+	public void messageReceived(final ChannelHandlerContext ctx, final FullHttpRequest msg) throws Exception {
 
-		if (RtspMethods.OPTIONS.equals(req.getMethod())) {
-	        final HttpResponse response = new DefaultHttpResponse(RtspVersions.RTSP_1_0, RtspResponseStatuses.OK);
-	        response.setHeader(RtspHeaders.Names.PUBLIC, Options);
-			ctx.getChannel().write(response);
+
+		if (RtspMethods.OPTIONS.equals(msg.method())) {
+
+			final FullHttpResponse response = new DefaultFullHttpResponse(RtspVersions.RTSP_1_0, RtspResponseStatuses.OK);
+	        response.headers().set(RtspHeaderNames.PUBLIC, Options);
+			ctx.write(response);
 		}
 		else {
-			super.messageReceived(ctx, evt);
+			msg.retain();
+			ctx.fireChannelRead(msg);
 		}
 	}
 }

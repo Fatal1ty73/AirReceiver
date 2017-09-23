@@ -17,13 +17,18 @@
 
 package org.phlo.AirReceiver;
 
-import org.jboss.netty.channel.*;
-import org.jboss.netty.handler.codec.http.*;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPromise;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponse;
 
 /**
  * Adds a few default headers to every RTSP response
  */
-public class RaopRtspHeaderHandler extends SimpleChannelHandler
+public class RaopRtspHeaderHandler extends SimpleChannelInboundHandler<FullHttpRequest>
 {
 	private static final String HeaderCSeq = "CSeq";
 
@@ -38,37 +43,34 @@ public class RaopRtspHeaderHandler extends SimpleChannelHandler
 	private String m_cseq;
 
 	@Override
-	public void messageReceived(final ChannelHandlerContext ctx, final MessageEvent evt)
+	public void messageReceived(final ChannelHandlerContext ctx, final FullHttpRequest msg)
 		throws Exception
 	{
-		final HttpRequest req = (HttpRequest)evt.getMessage();
 
 		synchronized(this) {
-			if (req.containsHeader(HeaderCSeq)) {
-				m_cseq = req.getHeader(HeaderCSeq);
+			if (msg.headers().contains(HeaderCSeq)) {
+				m_cseq = msg.headers().getAndConvert(HeaderCSeq);
 			}
 			else {
 				throw new ProtocolException("No CSeq header");
 			}
 		}
-
-		super.messageReceived(ctx, evt);
+msg.retain();
+		ctx.fireChannelRead(msg);
 	}
 
 	@Override
-	public void writeRequested(final ChannelHandlerContext ctx, final MessageEvent evt)
-		throws Exception
-	{
-		final HttpResponse resp = (HttpResponse)evt.getMessage();
+	public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+		final FullHttpResponse resp = (FullHttpResponse)msg;
 
 		synchronized(this) {
 			if (m_cseq != null)
-				resp.setHeader(HeaderCSeq, m_cseq);
+				resp.headers().set(HeaderCSeq, m_cseq);
 
-			resp.setHeader(HeaderAudioJackStatus, HeaderAudioJackStatusDefault);
+			resp.headers().set(HeaderAudioJackStatus, HeaderAudioJackStatusDefault);
 			//resp.setHeader(HeaderAudioLatency, Long.toString(HeaderAudioLatencyFrames));
 		}
-
-		super.writeRequested(ctx, evt);
+		super.write(ctx, msg, promise);
 	}
+
 }

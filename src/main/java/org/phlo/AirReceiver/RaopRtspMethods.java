@@ -17,8 +17,9 @@
 
 package org.phlo.AirReceiver;
 
-import org.jboss.netty.handler.codec.http.*;
-import org.jboss.netty.handler.codec.rtsp.*;
+
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.rtsp.RtspMethods;
 
 /**
  * The RTSP methods required for RAOP/AirTunes

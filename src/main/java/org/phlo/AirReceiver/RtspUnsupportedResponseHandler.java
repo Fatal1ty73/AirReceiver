@@ -17,27 +17,31 @@
 
 package org.phlo.AirReceiver;
 
-import java.util.logging.Logger;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.http.DefaultHttpResponse;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.rtsp.RtspResponseStatuses;
+import io.netty.handler.codec.rtsp.RtspVersions;
 
-import org.jboss.netty.channel.*;
-import org.jboss.netty.handler.codec.http.*;
-import org.jboss.netty.handler.codec.rtsp.RtspResponseStatuses;
-import org.jboss.netty.handler.codec.rtsp.RtspVersions;
+import java.util.logging.Logger;
 
 /**
  * Sends a METHOD NOT VALID response if no other channel handler
  * takes responsibility for a RTSP message.
  */
-public class RtspUnsupportedResponseHandler extends SimpleChannelUpstreamHandler {
+public class RtspUnsupportedResponseHandler extends SimpleChannelInboundHandler {
 	private static Logger s_logger = Logger.getLogger(RtspUnsupportedResponseHandler.class.getName());
 
-	@Override
-	public void messageReceived(final ChannelHandlerContext ctx, final MessageEvent evt) throws Exception {
-		final HttpRequest req = (HttpRequest)evt.getMessage();
 
-		s_logger.warning("Method " + req.getMethod() + " is not supported");
+	@Override
+	protected void messageReceived(ChannelHandlerContext ctx, Object msg) throws Exception {
+		final HttpRequest req = (HttpRequest)msg;
+
+		s_logger.warning("Method " + req.method() + " is not supported");
 
 		final HttpResponse response = new DefaultHttpResponse(RtspVersions.RTSP_1_0,  RtspResponseStatuses.METHOD_NOT_VALID);
-		ctx.getChannel().write(response);
+		ctx.channel().write(response);
 	}
 }

@@ -17,35 +17,36 @@
 
 package org.phlo.AirReceiver;
 
-import java.util.logging.Logger;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.socket.DatagramPacket;
+import io.netty.handler.codec.MessageToMessageDecoder;
 
-import org.jboss.netty.buffer.*;
-import org.jboss.netty.channel.*;
-import org.jboss.netty.handler.codec.oneone.OneToOneDecoder;
+import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * Decodes incoming packets, emitting instances of {@link RaopRtpPacket}
  */
-public class RaopRtpDecodeHandler extends OneToOneDecoder {
+@ChannelHandler.Sharable
+public class RaopRtpDecodeHandler extends MessageToMessageDecoder<DatagramPacket> {
 	private static final Logger s_logger = Logger.getLogger(RaopRtpDecodeHandler.class.getName());
 
 	@Override
-	protected Object decode(final ChannelHandlerContext ctx, final Channel channel, final Object msg)
-		throws Exception
+	protected void decode(ChannelHandlerContext ctx, DatagramPacket msg, List out) throws Exception
 	{
-		if (msg instanceof ChannelBuffer) {
-			final ChannelBuffer buffer = (ChannelBuffer)msg;
+		msg.retain();
+			final ByteBuf buffer = msg.content();
 
 			try {
-				return RaopRtpPacket.decode(buffer);
+				RaopRtpPacket decoded= RaopRtpPacket.decode(buffer.copy());
+				out.add(decoded);
 			}
 			catch (final InvalidPacketException e1) {
 				s_logger.warning(e1.getMessage());
-				return buffer;
+				out.add(buffer);
 			}
-		}
-		else {
-			return msg;
-		}
+
 	}
 }

@@ -17,7 +17,7 @@
 
 package org.phlo.AirReceiver;
 
-import org.jboss.netty.buffer.ChannelBuffer;
+import io.netty.buffer.ByteBuf;
 
 /**
  * Base class for the various RTP packet types of RAOP/AirTunes
@@ -29,7 +29,7 @@ public abstract class RaopRtpPacket extends RtpPacket {
 	 * @param index the start index
 	 * @return the integer, as long to preserve the original sign
 	 */
-	public static long getBeUInt(final ChannelBuffer buffer, final int index) {
+	public static long getBeUInt(final ByteBuf buffer, final int index) {
 		return (
 			((buffer.getByte(index+0) & 0xffL) << 24) |
 			((buffer.getByte(index+1) & 0xffL) << 16) |
@@ -44,7 +44,7 @@ public abstract class RaopRtpPacket extends RtpPacket {
 	 * @param index the start index
 	 * @param value the integer, as long to preserve the original sign
 	 */
-	public static void setBeUInt(final ChannelBuffer buffer, final int index, final long value) {
+	public static void setBeUInt(final ByteBuf buffer, final int index, final long value) {
 		assert (value & ~0xffffffffL) == 0;
 		buffer.setByte(index+0, (int)((value & 0xff000000L) >> 24));
 		buffer.setByte(index+1, (int)((value & 0x00ff0000L) >> 16));
@@ -58,7 +58,7 @@ public abstract class RaopRtpPacket extends RtpPacket {
 	 * @param index the start index
 	 * @return the short, as int to preserve the original sign
 	 */
-	public static int getBeUInt16(final ChannelBuffer buffer, final int index) {
+	public static int getBeUInt16(final ByteBuf buffer, final int index) {
 		return (int)(
 			((buffer.getByte(index+0) & 0xffL) << 8) |
 			((buffer.getByte(index+1) & 0xffL) << 0)
@@ -71,7 +71,7 @@ public abstract class RaopRtpPacket extends RtpPacket {
 	 * @param index the start index
 	 * @param value the short, as int to preserve the original sign
 	 */
-	public static void setBeUInt16(final ChannelBuffer buffer, final int index, final int value) {
+	public static void setBeUInt16(final ByteBuf buffer, final int index, final int value) {
 		assert (value & ~0xffffL) == 0;
 		buffer.setByte(index+0, (int)((value & 0xff00L) >> 8));
 		buffer.setByte(index+1, (int)((value & 0x00ffL) >> 0));
@@ -87,9 +87,9 @@ public abstract class RaopRtpPacket extends RtpPacket {
 	public static final class NtpTime {
 		public static final int Length = 8;
 
-		private final ChannelBuffer m_buffer;
+		private final ByteBuf m_buffer;
 
-		protected NtpTime(final ChannelBuffer buffer) {
+		protected NtpTime(final ByteBuf buffer) {
 			assert buffer.capacity() == Length;
 			m_buffer = buffer;
 		}
@@ -132,7 +132,7 @@ public abstract class RaopRtpPacket extends RtpPacket {
 			setSequence(7);
 		}
 
-		protected Timing(final ChannelBuffer buffer, final int minimumSize) throws ProtocolException {
+		protected Timing(final ByteBuf buffer, final int minimumSize) throws ProtocolException {
 			super(buffer, minimumSize);
 		}
 
@@ -192,7 +192,7 @@ public abstract class RaopRtpPacket extends RtpPacket {
 			setPayloadType(PayloadType);
 		}
 
-		protected TimingRequest(final ChannelBuffer buffer) throws ProtocolException {
+		protected TimingRequest(final ByteBuf buffer) throws ProtocolException {
 			super(buffer, Length);
 		}
 	}
@@ -213,7 +213,7 @@ public abstract class RaopRtpPacket extends RtpPacket {
 			setPayloadType(PayloadType);
 		}
 
-		protected TimingResponse(final ChannelBuffer buffer) throws ProtocolException {
+		protected TimingResponse(final ByteBuf buffer) throws ProtocolException {
 			super(buffer, Length);
 		}
 	}
@@ -237,7 +237,7 @@ public abstract class RaopRtpPacket extends RtpPacket {
 			setPayloadType(PayloadType);
 		}
 
-		protected Sync(final ChannelBuffer buffer) throws ProtocolException {
+		protected Sync(final ByteBuf buffer) throws ProtocolException {
 			super(buffer, Length);
 		}
 
@@ -326,7 +326,7 @@ public abstract class RaopRtpPacket extends RtpPacket {
 			setSequence(1);
 		}
 
-		protected RetransmitRequest(final ChannelBuffer buffer) throws ProtocolException {
+		protected RetransmitRequest(final ByteBuf buffer) throws ProtocolException {
 			super(buffer, Length);
 		}
 
@@ -382,7 +382,7 @@ public abstract class RaopRtpPacket extends RtpPacket {
 			super(length);
 		}
 
-		protected Audio(final ChannelBuffer buffer, final int minimumSize) throws ProtocolException {
+		protected Audio(final ByteBuf buffer, final int minimumSize) throws ProtocolException {
 			super(buffer, minimumSize);
 		}
 
@@ -409,10 +409,10 @@ public abstract class RaopRtpPacket extends RtpPacket {
 		abstract public void setSSrc(long sSrc);
 		
 		/**
-		 * ChannelBuffer containing the audio data
+		 * ByteBuf containing the audio data
 		 * @return channel buffer containing audio data
 		 */
-		abstract public ChannelBuffer getPayload();
+		abstract public ByteBuf getPayload();
 	}
 
 	/**
@@ -431,7 +431,7 @@ public abstract class RaopRtpPacket extends RtpPacket {
 			setPayloadType(PayloadType);
 		}
 
-		protected AudioTransmit(final ChannelBuffer buffer) throws ProtocolException {
+		protected AudioTransmit(final ByteBuf buffer) throws ProtocolException {
 			super(buffer, Length);
 		}
 
@@ -456,7 +456,7 @@ public abstract class RaopRtpPacket extends RtpPacket {
 		}
 
 		@Override
-		public ChannelBuffer getPayload() {
+		public ByteBuf getPayload() {
 			return getBuffer().slice(Length, getLength() - Length);
 		}
 
@@ -490,7 +490,7 @@ public abstract class RaopRtpPacket extends RtpPacket {
 			setPayloadType(PayloadType);
 		}
 
-		protected AudioRetransmit(final ChannelBuffer buffer) throws ProtocolException {
+		protected AudioRetransmit(final ByteBuf buffer) throws ProtocolException {
 			super(buffer, Length);
 		}
 
@@ -547,7 +547,7 @@ public abstract class RaopRtpPacket extends RtpPacket {
 		}
 
 		@Override
-		public ChannelBuffer getPayload() {
+		public ByteBuf getPayload() {
 			return getBuffer().slice(Length, getLength() - Length);
 		}
 
@@ -567,15 +567,15 @@ public abstract class RaopRtpPacket extends RtpPacket {
 	}
 
 	/**
-	 * Creates an RTP packet from a {@link ChannelBuffer}, using the
+	 * Creates an RTP packet from a {@link ByteBuf}, using the
 	 * sub-class of {@link RaopRtpPacket} indicated by the packet's
 	 * {@link #getPayloadType()}
 	 * 
-	 * @param buffer ChannelBuffer containing the packet
+	 * @param buffer ByteBuf containing the packet
 	 * @return Instance of one of the sub-classes of {@link RaopRtpPacket}
 	 * @throws ProtocolException if the packet is invalid.
 	 */
-	public static RaopRtpPacket decode(final ChannelBuffer buffer)
+	public static RaopRtpPacket decode(final ByteBuf buffer)
 		throws ProtocolException
 	{
 		final RtpPacket rtpPacket = new RtpPacket(buffer, Length);
@@ -596,11 +596,11 @@ public abstract class RaopRtpPacket extends RtpPacket {
 		setVersion((byte)2);
 	}
 
-	protected RaopRtpPacket(final ChannelBuffer buffer, final int minimumSize) throws ProtocolException {
+	protected RaopRtpPacket(final ByteBuf buffer, final int minimumSize) throws ProtocolException {
 		super(buffer, minimumSize);
 	}
 
-	protected RaopRtpPacket(final ChannelBuffer buffer) throws ProtocolException {
+	protected RaopRtpPacket(final ByteBuf buffer) throws ProtocolException {
 		super(buffer);
 	}
 }

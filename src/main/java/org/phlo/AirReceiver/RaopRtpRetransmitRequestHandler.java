@@ -20,10 +20,9 @@ package org.phlo.AirReceiver;
 import java.util.*;
 import java.util.logging.Logger;
 
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
 
 /**
  * Handles packet retransmissions.
@@ -35,7 +34,7 @@ import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
  * which can reasonably be expected to arrive before their play back time.
  *
  */
-public class RaopRtpRetransmitRequestHandler extends SimpleChannelUpstreamHandler {
+public class RaopRtpRetransmitRequestHandler extends SimpleChannelInboundHandler {
 	private static Logger s_logger = Logger.getLogger(RaopRtpRetransmitRequestHandler.class.getName());
 
 	/**
@@ -283,18 +282,16 @@ public class RaopRtpRetransmitRequestHandler extends SimpleChannelUpstreamHandle
 	}
 
 	@Override
-	public void messageReceived(final ChannelHandlerContext ctx, final MessageEvent evt)
-		throws Exception
-	{
-		if (evt.getMessage() instanceof RaopRtpPacket.AudioTransmit)
-			audioTransmitReceived(ctx, (RaopRtpPacket.AudioTransmit)evt.getMessage());
-		else if (evt.getMessage() instanceof RaopRtpPacket.AudioRetransmit)
-			audioRetransmitReceived(ctx, (RaopRtpPacket.AudioRetransmit)evt.getMessage());
+	protected void messageReceived(ChannelHandlerContext ctx, Object msg) throws Exception {
+		if (msg instanceof RaopRtpPacket.AudioTransmit)
+			audioTransmitReceived(ctx, (RaopRtpPacket.AudioTransmit)msg);
+		else if (msg instanceof RaopRtpPacket.AudioRetransmit)
+			audioRetransmitReceived(ctx, (RaopRtpPacket.AudioRetransmit)msg);
 
-		super.messageReceived(ctx, evt);
+		ctx.fireChannelRead(msg);
 
 		/* Request retransmits if necessary */
-		requestRetransmits(ctx.getChannel(), m_audioClock.getNextSecondsTime());
+		requestRetransmits(ctx.channel(), m_audioClock.getNextSecondsTime());
 	}
 
 	private synchronized void audioRetransmitReceived(final ChannelHandlerContext ctx, final RaopRtpPacket.AudioRetransmit audioPacket) {

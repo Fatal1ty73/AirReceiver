@@ -20,44 +20,37 @@ package org.phlo.AirReceiver;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelHandler;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPromise;
+import io.netty.channel.SimpleChannelInboundHandler;
 
 /**
  * Logs incoming and outgoing RTP packets
  */
-public class RtpLoggingHandler extends SimpleChannelHandler {
+@ChannelHandler.Sharable
+public class RtpLoggingHandler extends SimpleChannelInboundHandler<RtpPacket> {
 	private static final Logger s_logger = Logger.getLogger(RtpLoggingHandler.class.getName());
 
 	@Override
-	public void messageReceived(final ChannelHandlerContext ctx, final MessageEvent evt)
-		throws Exception
-	{
-		if (evt.getMessage() instanceof RtpPacket) {
-			final RtpPacket packet = (RtpPacket)evt.getMessage();
-
-			final Level level = getPacketLevel(packet);
+	public void messageReceived(final ChannelHandlerContext ctx, final RtpPacket msg)
+		throws Exception {
+		final Level level = getPacketLevel(msg);
 //			if (s_logger.isLoggable(level))
-				s_logger.log(Level.INFO, evt.getRemoteAddress() + "> " + packet.toString());
-		}
-
-		super.messageReceived(ctx, evt);
+		s_logger.log(Level.INFO, ctx.channel().remoteAddress() + "> " + msg.toString());
+		ctx.fireChannelRead(msg);
 	}
 
 	@Override
-	public void writeRequested(final ChannelHandlerContext ctx, final MessageEvent evt)
-		throws Exception
-	{
-		if (evt.getMessage() instanceof RtpPacket) {
-			final RtpPacket packet = (RtpPacket)evt.getMessage();
+	public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+		if (msg instanceof RtpPacket) {
+			final RtpPacket packet = (RtpPacket)msg;
 
 			final Level level = getPacketLevel(packet);
 //			if (s_logger.isLoggable(level))
-				s_logger.log(Level.INFO, evt.getRemoteAddress() + "< " + packet.toString());
+			s_logger.log(Level.INFO, ctx.channel().remoteAddress() + "< " + packet.toString());
 		}
-
-		super.writeRequested(ctx, evt);
+		super.write(ctx, msg, promise);
 	}
 
 	private Level getPacketLevel(final RtpPacket packet) {

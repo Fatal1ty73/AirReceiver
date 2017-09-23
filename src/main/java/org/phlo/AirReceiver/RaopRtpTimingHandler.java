@@ -17,9 +17,12 @@
 
 package org.phlo.AirReceiver;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
+
 import java.util.logging.Logger;
 
-import org.jboss.netty.channel.*;
 
 /**
  * Handles RTP timing.
@@ -28,7 +31,7 @@ import org.jboss.netty.channel.*;
  * and uses the information to re-sync the audio output queue upon receiving a
  * sync packet.
  */
-public class RaopRtpTimingHandler extends SimpleChannelHandler {
+public class RaopRtpTimingHandler extends SimpleChannelInboundHandler {
 	private static Logger s_logger = Logger.getLogger(RaopRtpTimingHandler.class.getName());
 
 	/**
@@ -85,43 +88,41 @@ public class RaopRtpTimingHandler extends SimpleChannelHandler {
 	}
 
 	@Override
-	public void channelOpen(final ChannelHandlerContext ctx, final ChannelStateEvent evt)
-		throws Exception
-	{
-		channelClosed(ctx, evt);
+	public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
+		channelUnregistered(ctx);
 
 		/* Start synchronization thread if it isn't already running */
 		if (m_synchronizationThread == null) {
-			m_synchronizationThread = new Thread(new TimingRequester(ctx.getChannel()));
+			m_synchronizationThread = new Thread(new TimingRequester(ctx.channel()));
 			m_synchronizationThread.setDaemon(true);
 			m_synchronizationThread.setName("Time Synchronizer");
 			m_synchronizationThread.start();
 			s_logger.fine("Time synchronizer started");
 		}
-
-		super.channelOpen(ctx, evt);
+		super.channelRegistered(ctx);
 	}
 
 	@Override
-	public void channelClosed(final ChannelHandlerContext ctx, final ChannelStateEvent evt)
-		throws Exception
-	{
+	public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
+		super.channelUnregistered(ctx);
 		synchronized(this) {
 			if (m_synchronizationThread != null)
 				m_synchronizationThread.interrupt();
 		}
 	}
 
+
+
 	@Override
-	public void messageReceived(final ChannelHandlerContext ctx, final MessageEvent evt)
+	public void messageReceived(final ChannelHandlerContext ctx, final Object msg)
 		throws Exception
 	{
-		if (evt.getMessage() instanceof RaopRtpPacket.Sync)
-			syncReceived((RaopRtpPacket.Sync)evt.getMessage());
-		else if (evt.getMessage() instanceof RaopRtpPacket.TimingResponse)
-			timingResponseReceived((RaopRtpPacket.TimingResponse)evt.getMessage());
+		if (msg instanceof RaopRtpPacket.Sync)
+			syncReceived((RaopRtpPacket.Sync)msg);
+		else if (msg instanceof RaopRtpPacket.TimingResponse)
+			timingResponseReceived((RaopRtpPacket.TimingResponse)msg);
 
-		super.messageReceived(ctx, evt);
+		ctx.fireChannelRead(msg);
 	}
 
 	private synchronized void timingResponseReceived(final RaopRtpPacket.TimingResponse timingResponsePacket) {

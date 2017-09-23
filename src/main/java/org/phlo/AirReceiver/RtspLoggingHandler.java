@@ -22,40 +22,40 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.jboss.netty.channel.*;
-import org.jboss.netty.handler.codec.http.*;
+import io.netty.channel.*;
+import io.netty.handler.codec.http.*;
 
 /**
  * Logs RTSP requests and responses.
  */
-public class RtspLoggingHandler extends SimpleChannelHandler
+public class RtspLoggingHandler extends SimpleChannelInboundHandler<FullHttpRequest>
 {
 	private static final Logger s_logger = Logger.getLogger(RtspLoggingHandler.class.getName());
 
 	@Override
-	public void channelConnected(final ChannelHandlerContext ctx, final ChannelStateEvent e)
-		throws Exception
-	{
-		s_logger.info("Client " + e.getChannel().getRemoteAddress() + " connected on " + e.getChannel().getLocalAddress());
+	public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
+		super.channelRegistered(ctx);
+		s_logger.info("Client " + ctx.channel().remoteAddress() + " connected on " + ctx.channel().localAddress());
 	}
 
+
+
 	@Override
-	public void messageReceived(final ChannelHandlerContext ctx, final MessageEvent evt)
+	public void messageReceived(final ChannelHandlerContext ctx, final FullHttpRequest msg)
 		throws Exception
 	{
-		final HttpRequest req = (HttpRequest)evt.getMessage();
-
 		final Level level = Level.INFO;
 		if (s_logger.isLoggable(level)) {
-			final String content = req.getContent().toString(Charset.defaultCharset());
+			String content = msg.content().toString(Charset.defaultCharset());
+
 
 			final StringBuilder s = new StringBuilder();
 			s.append(">");
-			s.append(req.getMethod());
+			s.append(msg.method());
 			s.append(" ");
-			s.append(req.getUri());
+			s.append(msg.uri());
 			s.append("\n");
-			for(final Map.Entry<String, String> header: req.getHeaders()) {
+			for(final Map.Entry<String, String> header: msg.headers().entriesConverted()) {
 				s.append("  ");
 				s.append(header.getKey());
 				s.append(": ");
@@ -65,25 +65,23 @@ public class RtspLoggingHandler extends SimpleChannelHandler
 			s.append(content);
 			s_logger.log(Level.INFO, s.toString());
 		}
-
-		super.messageReceived(ctx, evt);
+		msg.retain();
+		ctx.fireChannelRead(msg);
 	}
 
 	@Override
-	public void writeRequested(final ChannelHandlerContext ctx, final MessageEvent evt)
-		throws Exception
-	{
-		final HttpResponse resp = (HttpResponse)evt.getMessage();
+	public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+		final FullHttpResponse resp = (FullHttpResponse)msg;
 
 		final Level level = Level.INFO;
 		if (s_logger.isLoggable(level)) {
 			final StringBuilder s = new StringBuilder();
 			s.append("<");
-			s.append(resp.getStatus().getCode());
+			s.append(resp.status().code());
 			s.append(" ");
-			s.append(resp.getStatus().getReasonPhrase());
+			s.append(resp.status().reasonPhrase());
 			s.append("\n");
-			for(final Map.Entry<String, String> header: resp.getHeaders()) {
+			for(final Map.Entry<String, String> header: resp.headers().entriesConverted()) {
 				s.append("  ");
 				s.append(header.getKey());
 				s.append(": ");
@@ -93,6 +91,14 @@ public class RtspLoggingHandler extends SimpleChannelHandler
 			s_logger.log(Level.INFO, s.toString());
 		}
 
-		super.writeRequested(ctx, evt);
+		super.write(ctx, msg, promise.addListener(new ChannelFutureListener() {
+			@Override
+			public void operationComplete(ChannelFuture future) {
+				if (!future.isSuccess()) {
+					s_logger.log(Level.WARNING, future.cause().getMessage());
+				}
+			}
+		}));
+		super.flush(ctx);
 	}
 }

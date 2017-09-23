@@ -33,7 +33,7 @@ import javax.sound.sampled.*;
 public class AudioOutputQueue implements AudioClock {
 	private static Logger s_logger = Logger.getLogger(AudioOutputQueue.class.getName());
 
-	private static final double QueueLengthMaxSeconds = 10;
+	private static final double QueueLengthMaxSeconds = 5000000;
 	private static final double BufferSizeSeconds = 0.05;
 	private static final double TimingPrecision = 0.001;
 

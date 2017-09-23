@@ -17,31 +17,37 @@
 
 package org.phlo.AirReceiver;
 
-import org.jboss.netty.channel.*;
-import org.jboss.netty.handler.codec.rtsp.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.http.HttpObjectAggregator;
+import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.codec.rtsp.RtspRequestDecoder;
+import io.netty.handler.codec.rtsp.RtspResponseEncoder;
 
 /**
  * Factory for AirTunes/RAOP RTSP channels
  */
-public class RaopRtspPipelineFactory implements ChannelPipelineFactory {
-	@Override
-	public ChannelPipeline getPipeline() throws Exception {
-		final ChannelPipeline pipeline = Channels.pipeline();
+public class RaopRtspPipelineFactory extends ChannelInitializer {
 
+
+	@Override
+	protected void initChannel(Channel ch) throws Exception {
+		ChannelPipeline pipeline = ch.pipeline();
 		pipeline.addLast("executionHandler", AirReceiver.ChannelExecutionHandler);
 		pipeline.addLast("closeOnShutdownHandler", AirReceiver.CloseChannelOnShutdownHandler);
-		pipeline.addLast("exceptionLogger", new ExceptionLoggingHandler());
 		pipeline.addLast("decoder", new RtspRequestDecoder());
 		pipeline.addLast("encoder", new RtspResponseEncoder());
+		pipeline.addLast("httpServerCodec",new HttpServerCodec());
+		pipeline.addLast("httpObjectAggregator",new HttpObjectAggregator(1024*1024));
 		pipeline.addLast("logger", new RtspLoggingHandler());
-		pipeline.addLast("errorResponse", new RtspErrorResponseHandler());
 		pipeline.addLast("challengeResponse", new RaopRtspChallengeResponseHandler(AirReceiver.HardwareAddressBytes));
 		pipeline.addLast("header", new RaopRtspHeaderHandler());
 		pipeline.addLast("options", new RaopRtspOptionsHandler());
 		pipeline.addLast("audio", new RaopAudioHandler(AirReceiver.ExecutorService));
 		pipeline.addLast("unsupportedResponse", new RtspUnsupportedResponseHandler());
+		pipeline.addLast("errorResponse", new RtspErrorResponseHandler());
+		pipeline.addLast("exceptionLogger", new ExceptionLoggingHandler());
 
-		return pipeline;
 	}
-
 }

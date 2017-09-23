@@ -18,12 +18,13 @@
 package org.phlo.AirReceiver;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.*;
 
 import javax.sound.sampled.AudioFormat;
 
-import org.jboss.netty.channel.*;
-import org.jboss.netty.handler.codec.oneone.OneToOneDecoder;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.MessageToMessageDecoder;
 
 import com.beatofthedrum.alacdecoder.*;
 
@@ -34,7 +35,7 @@ import com.beatofthedrum.alacdecoder.*;
  * This class assumes that ALAC requires no inter-packet state - it doesn't make
  * any effort to feed the packets to ALAC in the correct order.
  */
-public class RaopRtpAudioAlacDecodeHandler extends OneToOneDecoder implements AudioStreamInformationProvider {
+public class RaopRtpAudioAlacDecodeHandler extends MessageToMessageDecoder implements AudioStreamInformationProvider {
 	private static Logger s_logger = Logger.getLogger(RaopRtpAudioAlacDecodeHandler.class.getName());
 
 	/* There are the indices into the SDP format options at which
@@ -115,61 +116,58 @@ public class RaopRtpAudioAlacDecodeHandler extends OneToOneDecoder implements Au
 	}
 
 	@Override
-	protected synchronized Object decode(final ChannelHandlerContext ctx, final Channel channel, final Object msg)
-		throws Exception
-	{
-		if (!(msg instanceof RaopRtpPacket.Audio))
-			return msg;
+	protected void decode(ChannelHandlerContext ctx, Object msg, List out) throws Exception {
+		{
+			if (!(msg instanceof RaopRtpPacket.Audio))
+				return;
 
-		final RaopRtpPacket.Audio alacPacket = (RaopRtpPacket.Audio)msg;
+			final RaopRtpPacket.Audio alacPacket = (RaopRtpPacket.Audio) msg;
 
 		/* The ALAC decode sometimes reads beyond the input's bounds
 		 * (but later discards the data). To alleviate, we allocate
 		 * 3 spare bytes at input buffer's end.
 		 */
-		final byte[] alacBytes = new byte[alacPacket.getPayload().capacity() + 3];
-		alacPacket.getPayload().getBytes(0, alacBytes, 0, alacPacket.getPayload().capacity());
+			final byte[] alacBytes = new byte[alacPacket.getPayload().capacity() + 3];
+			alacPacket.getPayload().getBytes(0, alacBytes, 0, alacPacket.getPayload().capacity());
 
 		/* Decode ALAC to PCM */
-		final int[] pcmSamples = new int[m_samplesPerFrame * 2];
-		final int pcmSamplesBytes = AlacDecodeUtils.decode_frame(m_alacFile, alacBytes, pcmSamples, m_samplesPerFrame);
+			final int[] pcmSamples = new int[m_samplesPerFrame * 2];
+			final int pcmSamplesBytes = AlacDecodeUtils.decode_frame(m_alacFile, alacBytes, pcmSamples, m_samplesPerFrame);
 
 		/* decode_frame() returns the number of *bytes*, not samples! */
-		final int pcmSamplesLength = pcmSamplesBytes / 4;
-		final Level level = Level.FINEST;
-		if (s_logger.isLoggable(level))
-			s_logger.log(level, "Decoded " + alacBytes.length + " bytes of ALAC audio data to " + pcmSamplesLength + " PCM samples");
+			final int pcmSamplesLength = pcmSamplesBytes / 4;
+			final Level level = Level.FINEST;
+			if (s_logger.isLoggable(level))
+				s_logger.log(level, "Decoded " + alacBytes.length + " bytes of ALAC audio data to " + pcmSamplesLength + " PCM samples");
 
 		/* Complain if the sender doesn't honour it's commitment */
-		if (pcmSamplesLength != m_samplesPerFrame)
-			throw new ProtocolException("Frame declared to contain " + m_samplesPerFrame + ", but contained " + pcmSamplesLength);
+			if (pcmSamplesLength != m_samplesPerFrame)
+				throw new ProtocolException("Frame declared to contain " + m_samplesPerFrame + ", but contained " + pcmSamplesLength);
 
 		/* Assemble PCM audio packet from original packet header and decoded data.
 		 * The ALAC decode emits signed PCM samples as integers. We store them as
 		 * as unsigned big endian integers in the packet.
 		 */
-		
-		RaopRtpPacket.Audio pcmPacket;
-		if (alacPacket instanceof RaopRtpPacket.AudioTransmit) {
-			pcmPacket = new RaopRtpPacket.AudioTransmit(pcmSamplesLength * 4);
-			alacPacket.getBuffer().getBytes(0, pcmPacket.getBuffer(), 0, RaopRtpPacket.AudioTransmit.Length);
-		}
-		else if (alacPacket instanceof RaopRtpPacket.AudioRetransmit) {
-			pcmPacket = new RaopRtpPacket.AudioRetransmit(pcmSamplesLength * 4);
-			alacPacket.getBuffer().getBytes(0, pcmPacket.getBuffer(), 0, RaopRtpPacket.AudioRetransmit.Length);
-		}
-		else
-			throw new ProtocolException("Packet type " + alacPacket.getClass() + " is not supported by the ALAC decoder");
 
-		for(int i=0; i < pcmSamples.length; ++i) {
+			RaopRtpPacket.Audio pcmPacket;
+			if (alacPacket instanceof RaopRtpPacket.AudioTransmit) {
+				pcmPacket = new RaopRtpPacket.AudioTransmit(pcmSamplesLength * 4);
+				alacPacket.getBuffer().getBytes(0, pcmPacket.getBuffer(), 0, RaopRtpPacket.AudioTransmit.Length);
+			} else if (alacPacket instanceof RaopRtpPacket.AudioRetransmit) {
+				pcmPacket = new RaopRtpPacket.AudioRetransmit(pcmSamplesLength * 4);
+				alacPacket.getBuffer().getBytes(0, pcmPacket.getBuffer(), 0, RaopRtpPacket.AudioRetransmit.Length);
+			} else
+				throw new ProtocolException("Packet type " + alacPacket.getClass() + " is not supported by the ALAC decoder");
+
+			for (int i = 0; i < pcmSamples.length; ++i) {
 			/* Convert sample to big endian unsigned integer PCM */
-			final int pcmSampleUnsigned = pcmSamples[i] + 0x8000;
+				final int pcmSampleUnsigned = pcmSamples[i] + 0x8000;
 
-			pcmPacket.getPayload().setByte(2*i, (pcmSampleUnsigned & 0xff00) >> 8);
-			pcmPacket.getPayload().setByte(2*i + 1, pcmSampleUnsigned & 0x00ff);
+				pcmPacket.getPayload().setByte(2 * i, (pcmSampleUnsigned & 0xff00) >> 8);
+				pcmPacket.getPayload().setByte(2 * i + 1, pcmSampleUnsigned & 0x00ff);
+			}
+			out.add(pcmPacket);
 		}
-
-		return pcmPacket;
 	}
 
 	@Override

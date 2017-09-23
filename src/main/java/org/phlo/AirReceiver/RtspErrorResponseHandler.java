@@ -17,15 +17,16 @@
 
 package org.phlo.AirReceiver;
 
-import org.jboss.netty.channel.*;
-import org.jboss.netty.handler.codec.http.*;
-import org.jboss.netty.handler.codec.rtsp.*;
+import io.netty.channel.*;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.rtsp.*;
 
 /**
  * Sends an RTSP error response if one of the channel handlers
  * throws an exception.
  */
-public class RtspErrorResponseHandler extends SimpleChannelHandler {
+public class RtspErrorResponseHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 	/**
 	 * Prevents an infinite loop that otherwise occurs if
 	 * write()ing the exception response itself triggers
@@ -37,25 +38,26 @@ public class RtspErrorResponseHandler extends SimpleChannelHandler {
 	private boolean m_messageTriggeredException = false;
 
 	@Override
-    public void messageReceived(final ChannelHandlerContext ctx, final MessageEvent evt) throws Exception {
+    public void messageReceived(final ChannelHandlerContext ctx, final FullHttpRequest msg) throws Exception {
 		synchronized(this) {
 			m_messageTriggeredException = false;
 		}
-
-		super.messageReceived(ctx, evt);
+		msg.retain();
+ctx.fireChannelRead(msg);
     }
 
 	@Override
-	public void exceptionCaught(final ChannelHandlerContext ctx, final ExceptionEvent evt) throws Exception {
+	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
 		synchronized(this) {
 			if (m_messageTriggeredException)
 				return;
 			m_messageTriggeredException = true;
 		}
 
-		if (ctx.getChannel().isConnected()) {
+		if (ctx.channel().isRegistered()) {
 			final HttpResponse response = new DefaultHttpResponse(RtspVersions.RTSP_1_0,  RtspResponseStatuses.INTERNAL_SERVER_ERROR);
-			ctx.getChannel().write(response).addListener(ChannelFutureListener.CLOSE);
+			ctx.channel().writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
 		}
+		super.exceptionCaught(ctx, cause);
 	}
 }

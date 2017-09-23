@@ -17,20 +17,24 @@
 
 package org.phlo.AirReceiver;
 
-import org.jboss.netty.channel.*;
-import org.jboss.netty.handler.codec.oneone.OneToOneEncoder;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.MessageToMessageEncoder;
+
+import java.util.List;
 
 /**
  * Converts outgoing RTP packets into a sequence of bytes
  */
-public class RtpEncodeHandler extends OneToOneEncoder {
+@ChannelHandler.Sharable
+public class RtpEncodeHandler extends MessageToMessageEncoder {
+
 	@Override
-	protected Object encode(final ChannelHandlerContext ctx, final Channel channel, final Object msg)
-		throws Exception
-	{
-		if (msg instanceof RtpPacket)
-			return ((RtpPacket)msg).getBuffer();
-		else
-			return msg;
+	protected void encode(ChannelHandlerContext ctx, Object msg, List out) throws Exception {
+		if (msg instanceof RtpPacket) {
+			ByteBuf buff = ((RtpPacket) msg).getBuffer();
+			out.add(buff);
+		}
 	}
 }
