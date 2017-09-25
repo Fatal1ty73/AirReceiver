@@ -72,14 +72,10 @@ public class RaopAudioHandler extends SimpleChannelInboundHandler<FullHttpReques
 			synchronized(RaopAudioHandler.this) {
 				audioChannel = m_audioChannel;
 			}
-ctx.fireChannelRead(msg);
-//			if ((m_audioChannel != null) && m_audioChannel.isOpen() && !m_audioChannel.isWritable()) {
-//				audioChannel.pipeline().sendUpstream(new UpstreamMessageEvent(
-//					audioChannel,
-//					msg,
-//					msg.remoteAddress())
-//				);
-//			}
+//ctx.fireChannelRead(msg);
+			if ((m_audioChannel != null) && m_audioChannel.isOpen() && m_audioChannel.isWritable()) {
+				audioChannel.pipeline().firstContext().fireChannelRead(msg);
+			}
 		}
 	}
 
