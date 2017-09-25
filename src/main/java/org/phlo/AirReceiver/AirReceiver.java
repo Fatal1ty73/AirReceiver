@@ -21,14 +21,9 @@ import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.rtsp.RtspRequestDecoder;
-import io.netty.handler.codec.rtsp.RtspResponseEncoder;
+import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.DefaultEventExecutor;
-import io.netty.util.concurrent.DefaultEventExecutorGroup;
-import io.netty.util.concurrent.EventExecutorGroup;
 
 import javax.jmdns.JmDNS;
 import javax.jmdns.ServiceInfo;
@@ -334,6 +329,7 @@ public class AirReceiver {
 	}
 
 	public static void main(final String[] args) throws Exception {
+//		ResourceLeakDetector.setLevel(ResourceLeakDetector.Level.PARANOID);
     	/* Make sure AirReceiver shuts down gracefully */
 		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
 			@Override

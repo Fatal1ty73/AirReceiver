@@ -17,14 +17,13 @@
 
 package org.phlo.AirReceiver;
 
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageDecoder;
 
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 import java.util.List;
 
 /**

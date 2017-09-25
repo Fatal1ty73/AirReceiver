@@ -17,18 +17,19 @@
 
 package org.phlo.AirReceiver;
 
+import javax.crypto.Cipher;
+import javax.crypto.CipherSpi;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.security.*;
-import java.security.interfaces.*;
-import java.security.spec.*;
+import java.security.KeyFactory;
+import java.security.Provider;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.spec.KeySpec;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.crypto.Cipher;
-import javax.crypto.CipherSpi;
 
 public final class AirTunesCrytography {
 	/**

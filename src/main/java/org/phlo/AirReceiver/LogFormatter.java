@@ -19,9 +19,11 @@ package org.phlo.AirReceiver;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.text.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.logging.*;
+import java.util.logging.Formatter;
+import java.util.logging.LogRecord;
 
 /**
  * Java.util.logging single-line log formatter

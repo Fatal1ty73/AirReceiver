@@ -17,12 +17,12 @@
 
 package org.phlo.AirReceiver;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerAdapter;
 import io.netty.channel.ChannelHandlerContext;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Logs exceptions thrown by other channel handlers

@@ -22,8 +22,6 @@ import io.netty.channel.ChannelPromise;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponse;
 
 /**
  * Adds a few default headers to every RTSP response

@@ -40,7 +40,7 @@ public class RaopRtpDecodeHandler extends MessageToMessageDecoder<DatagramPacket
 			final ByteBuf buffer = msg.content();
 
 			try {
-				RaopRtpPacket decoded= RaopRtpPacket.decode(buffer.slice());
+				RaopRtpPacket decoded= RaopRtpPacket.decode(buffer);
 				out.add(decoded);
 			}
 			catch (final InvalidPacketException e1) {

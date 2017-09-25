@@ -19,7 +19,9 @@ package org.phlo.AirReceiver;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.rtsp.RtspHeaderNames;
 import io.netty.handler.codec.rtsp.RtspMethods;
 import io.netty.handler.codec.rtsp.RtspResponseStatuses;

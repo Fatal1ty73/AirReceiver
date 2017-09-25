@@ -17,13 +17,14 @@
 
 package org.phlo.AirReceiver;
 
+import io.netty.channel.*;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.FullHttpResponse;
+
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import io.netty.channel.*;
-import io.netty.handler.codec.http.*;
 
 /**
  * Logs RTSP requests and responses.

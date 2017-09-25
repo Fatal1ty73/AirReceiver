@@ -17,12 +17,13 @@
 
 package org.phlo.AirReceiver;
 
-import java.util.*;
-import java.util.logging.Logger;
-
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+
+import java.util.Iterator;
+import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * Handles packet retransmissions.

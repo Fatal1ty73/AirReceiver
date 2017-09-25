@@ -17,13 +17,10 @@
 
 package org.phlo.AirReceiver;
 
+import io.netty.channel.*;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPromise;
-import io.netty.channel.SimpleChannelInboundHandler;
 
 /**
  * Logs incoming and outgoing RTP packets
@@ -36,8 +33,8 @@ public class RtpLoggingHandler extends SimpleChannelInboundHandler<RtpPacket> {
 	public void messageReceived(final ChannelHandlerContext ctx, final RtpPacket msg)
 		throws Exception {
 		final Level level = getPacketLevel(msg);
-//			if (s_logger.isLoggable(level))
-		s_logger.log(Level.INFO, ctx.channel().remoteAddress() + "> " + msg.toString());
+			if (s_logger.isLoggable(level))
+				s_logger.log(level, ctx.channel().remoteAddress() + "> " + msg.toString());
 		ctx.fireChannelRead(msg);
 	}
 
@@ -47,10 +44,18 @@ public class RtpLoggingHandler extends SimpleChannelInboundHandler<RtpPacket> {
 			final RtpPacket packet = (RtpPacket)msg;
 
 			final Level level = getPacketLevel(packet);
-//			if (s_logger.isLoggable(level))
-			s_logger.log(Level.INFO, ctx.channel().remoteAddress() + "< " + packet.toString());
+			if (s_logger.isLoggable(level))
+				s_logger.log(level, ctx.channel().remoteAddress() + "< " + packet.toString());
 		}
-		super.write(ctx, msg, promise);
+		super.write(ctx, msg, promise.addListener(new ChannelFutureListener() {
+			@Override
+			public void operationComplete(ChannelFuture future) {
+				if (!future.isSuccess()) {
+					s_logger.log(Level.WARNING, future.cause().getMessage());
+				}
+			}
+		}));
+		super.flush(ctx);
 	}
 
 	private Level getPacketLevel(final RtpPacket packet) {

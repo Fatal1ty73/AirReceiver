@@ -17,7 +17,8 @@
 
 package org.phlo.AirReceiver;
 
-import io.netty.buffer.*;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
 /**
  * Basic RTP packet as described by RFC 3550

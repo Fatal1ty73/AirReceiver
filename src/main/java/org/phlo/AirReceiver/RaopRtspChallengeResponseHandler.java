@@ -17,18 +17,16 @@
 
 package org.phlo.AirReceiver;
 
-import java.net.*;
-import java.nio.ByteBuffer;
-
-import javax.crypto.*;
-
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponse;
+
+import javax.crypto.Cipher;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 
 /**
  * Adds an {@code Apple-Response} header to a response if the request contain

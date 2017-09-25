@@ -19,7 +19,6 @@ package org.phlo.AirReceiver;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
-import io.netty.buffer.WrappedByteBuf;
 import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
@@ -30,17 +29,21 @@ import io.netty.handler.codec.rtsp.RtspResponseStatuses;
 import io.netty.handler.codec.rtsp.RtspVersions;
 import io.netty.util.concurrent.DefaultEventExecutor;
 
-import java.net.*;
-import java.nio.channels.Channels;
-import java.nio.charset.*;
-import java.util.*;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.charset.Charset;
+import java.util.Arrays;
+import java.util.Deque;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.*;
-
-import javax.crypto.*;
-import javax.crypto.spec.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 /**
@@ -72,7 +75,6 @@ public class RaopAudioHandler extends SimpleChannelInboundHandler<FullHttpReques
 			synchronized(RaopAudioHandler.this) {
 				audioChannel = m_audioChannel;
 			}
-//ctx.fireChannelRead(msg);
 			if ((m_audioChannel != null) && m_audioChannel.isOpen() && m_audioChannel.isWritable()) {
 				audioChannel.pipeline().firstContext().fireChannelRead(msg);
 			}
@@ -138,8 +140,8 @@ public class RaopAudioHandler extends SimpleChannelInboundHandler<FullHttpReques
 				final byte[] samples = new byte[audioPacket.getPayload().capacity()];
 				audioPacket.getPayload().getBytes(0, samples);
 				m_audioOutputQueue.enqueue(audioPacket.getTimeStamp(), samples);
-//				if (s_logger.isLoggable(Level.FINEST))
-					s_logger.info("Packet with sequence " + audioPacket.getSequence() + " for playback at " + audioPacket.getTimeStamp() + " submitted to audio output queue");
+				if (s_logger.isLoggable(Level.FINEST))
+					s_logger.finest("Packet with sequence " + audioPacket.getSequence() + " for playback at " + audioPacket.getTimeStamp() + " submitted to audio output queue");
 			}
 			else {
 				s_logger.warning("No audio queue available, dropping packet");
