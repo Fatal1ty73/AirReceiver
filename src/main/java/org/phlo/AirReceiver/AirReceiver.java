@@ -100,7 +100,8 @@ public class AirReceiver {
 			"et", "0,1",
 			"cn", "0,1",
 			"am", "MyAirplay,1",
-			"vn", "3"
+			"vn", "3",
+			"md","0,1,2"
 	);
 
 	/**

@@ -36,9 +36,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.charset.Charset;
-import java.util.Arrays;
-import java.util.Deque;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -259,6 +257,8 @@ public class RaopAudioHandler extends SimpleChannelInboundHandler<FullHttpReques
 		else if (RaopRtspMethods.GET_PARAMETER.equals(method)) {
 			getParameterReceived(ctx, msg);
 			return;
+		} else{
+			s_logger.warning("Unsupported method: " + method.toString());
 		}
 		msg.retain();
 		ctx.fireChannelRead(msg);
@@ -328,9 +328,9 @@ public class RaopAudioHandler extends SimpleChannelInboundHandler<FullHttpReques
 		throws Exception
 	{
 		/* ANNOUNCE must contain stream information in SDP format */
-		if (!req.headers().contains("Content-Type"))
+		if (!req.headers().contains(HttpHeaderNames.CONTENT_TYPE))
 			throw new ProtocolException("No Content-Type header");
-		if (!"application/sdp".equals(req.headers().getAndConvert("Content-Type")))
+		if (!"application/sdp".equals(req.headers().getAndConvert(HttpHeaderNames.CONTENT_TYPE)))
 			throw new ProtocolException("Invalid Content-Type header, expected application/sdp but got " + req.headers().getAndConvert("Content-Type"));
 
 		reset();
@@ -620,32 +620,49 @@ public class RaopAudioHandler extends SimpleChannelInboundHandler<FullHttpReques
 		throws ProtocolException
 	{
 		/* Body in ASCII encoding with unix newlines */
-		final String body = req.content().toString(Charset.forName("ASCII")).replace("\r", "");
+		final String body = req.content().toString(Charset.forName("UTF-8")).replace("\r", "");
 
-		/* Handle parameters */
-		for(final String line: body.split("\n")) {
-			try {
+		if(req.headers().contains(HttpHeaderNames.CONTENT_TYPE)){
+			s_logger.info("Header value: "+req.headers().get(HttpHeaderNames.CONTENT_TYPE));
+			if(req.headers().get(HttpHeaderNames.CONTENT_TYPE).equals("application/x-dmap-tagged")){
+				Map<String,String> map = new HashMap<String,String>();
+				DAAPParserUtil.getContent(req.content(),map);
+				CurrentTrack.setSongInfo(SongInfo.createSongInfo(map));
+
+			}
+			if(req.headers().get(HttpHeaderNames.CONTENT_TYPE).equals("image/jpeg")){
+				CurrentTrack.getSongInfo().setPicture(req.content().nioBuffer());
+
+			}
+			if(req.headers().get(HttpHeaderNames.CONTENT_TYPE).equals("text/parameters")){
+				/* Handle parameters */
+				for(final String line: body.split("\n")) {
+					try {
 				/* Split parameter into name and value */
-				final Matcher m_parameter = s_pattern_parameter.matcher(line);
-				if (!m_parameter.matches())
-					throw new ProtocolException("Cannot parse line " + line);
+						final Matcher m_parameter = s_pattern_parameter.matcher(line);
+						if (!m_parameter.matches())
+							throw new ProtocolException("Cannot parse line " + line);
 
-				final String name = m_parameter.group(1);
-				final String value = m_parameter.group(2);
+						final String name = m_parameter.group(1);
+						final String value = m_parameter.group(2);
 
-				if ("volume".equals(name)) {
-					s_logger.info("Volume set to " + value);
-					
+						if ("volume".equals(name)) {
+							s_logger.info("Volume set to " + value);
+
 					/* Set output gain */
-					if (m_audioOutputQueue != null)
-						m_audioOutputQueue.setGain(Float.parseFloat(value));
+							if (m_audioOutputQueue != null)
+								m_audioOutputQueue.setGain(Float.parseFloat(value));
 
+						}
+					}
+					catch (final Throwable e) {
+						throw new ProtocolException("Unable to parse line " + line);
+					}
 				}
 			}
-			catch (final Throwable e) {
-				throw new ProtocolException("Unable to parse line " + line);
-			}
 		}
+
+
 
 		final FullHttpResponse response = new DefaultFullHttpResponse (RtspVersions.RTSP_1_0,  RtspResponseStatuses.OK);
 		ctx.channel().write(response);
