@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 /**
  * Logs RTSP requests and responses.
  */
-public class RtspLoggingHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
+public class RtspLoggingHandler extends ChannelDuplexHandler {
     private static final Logger s_logger = Logger.getLogger(RtspLoggingHandler.class.getName());
 
     @Override
@@ -40,20 +40,21 @@ public class RtspLoggingHandler extends SimpleChannelInboundHandler<FullHttpRequ
 
 
     @Override
-    public void messageReceived(final ChannelHandlerContext ctx, final FullHttpRequest msg)
+    public void channelRead(final ChannelHandlerContext ctx, final Object msg)
             throws Exception {
+        FullHttpRequest fullHttpRequest = (FullHttpRequest)msg;
         final Level level = Level.INFO;
         if (s_logger.isLoggable(level)) {
-            String content = msg.content().toString(Charset.defaultCharset());
+            String content = fullHttpRequest.content().toString(Charset.defaultCharset());
 
 
             final StringBuilder s = new StringBuilder();
             s.append(">");
-            s.append(msg.method());
+            s.append(fullHttpRequest.method());
             s.append(" ");
-            s.append(msg.uri());
+            s.append(fullHttpRequest.uri());
             s.append("\n");
-            for (final Map.Entry<String, String> header : msg.headers().entriesConverted()) {
+            for (final Map.Entry<String, String> header : fullHttpRequest.headers().entries()) {
                 s.append("  ");
                 s.append(header.getKey());
                 s.append(": ");
@@ -63,8 +64,8 @@ public class RtspLoggingHandler extends SimpleChannelInboundHandler<FullHttpRequ
             s.append(content);
             s_logger.log(Level.INFO, s.toString());
         }
-        msg.retain();
-        ctx.fireChannelRead(msg);
+        fullHttpRequest.retain();
+        ctx.fireChannelRead(fullHttpRequest);
     }
 
     @Override
@@ -79,7 +80,7 @@ public class RtspLoggingHandler extends SimpleChannelInboundHandler<FullHttpRequ
             s.append(" ");
             s.append(resp.status().reasonPhrase());
             s.append("\n");
-            for (final Map.Entry<String, String> header : resp.headers().entriesConverted()) {
+            for (final Map.Entry<String, String> header : resp.headers().entries()) {
                 s.append("  ");
                 s.append(header.getKey());
                 s.append(": ");

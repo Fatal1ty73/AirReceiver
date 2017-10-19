@@ -79,7 +79,7 @@ public class RaopRtpTimingHandler extends SimpleChannelInboundHandler {
     }
 
     @Override
-    public void messageReceived(final ChannelHandlerContext ctx, final Object msg)
+    public void channelRead0(final ChannelHandlerContext ctx, final Object msg)
             throws Exception {
         if (msg instanceof RaopRtpPacket.Sync)
             syncReceived((RaopRtpPacket.Sync) msg);

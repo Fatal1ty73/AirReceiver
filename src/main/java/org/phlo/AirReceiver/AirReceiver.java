@@ -160,9 +160,9 @@ public class AirReceiver {
     public static final ChannelHandler CloseChannelOnShutdownHandler = new ExecutionSharableHandler() {
 
         @Override
-        public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
+        public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
             s_allChannels.add(ctx.channel());
-            super.channelRegistered(ctx);
+            super.handlerAdded(ctx);
         }
     };
 

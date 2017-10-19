@@ -47,7 +47,7 @@ public class RaopRtspOptionsHandler extends SimpleChannelInboundHandler<FullHttp
                     RaopRtspMethods.SET_PARAMETER.name();
 
     @Override
-    public void messageReceived(final ChannelHandlerContext ctx, final FullHttpRequest msg) throws Exception {
+    public void channelRead0(final ChannelHandlerContext ctx, final FullHttpRequest msg) throws Exception {
 
 
         if (RtspMethods.OPTIONS.equals(msg.method())) {

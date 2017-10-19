@@ -31,15 +31,14 @@ import java.util.logging.Logger;
  * Sends a METHOD NOT VALID response if no other channel handler
  * takes responsibility for a RTSP message.
  */
-public class RtspUnsupportedResponseHandler extends SimpleChannelInboundHandler {
+public class RtspUnsupportedResponseHandler extends SimpleChannelInboundHandler<HttpRequest> {
     private static Logger s_logger = Logger.getLogger(RtspUnsupportedResponseHandler.class.getName());
 
 
     @Override
-    protected void messageReceived(ChannelHandlerContext ctx, Object msg) throws Exception {
-        final HttpRequest req = (HttpRequest) msg;
+    protected void channelRead0(ChannelHandlerContext ctx, final HttpRequest msg) throws Exception {
 
-        s_logger.warning("Method " + req.method() + " is not supported");
+        s_logger.warning("Method " + msg.method() + " is not supported");
 
         final HttpResponse response = new DefaultHttpResponse(RtspVersions.RTSP_1_0, RtspResponseStatuses.METHOD_NOT_VALID);
         ctx.channel().write(response);

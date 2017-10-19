@@ -26,16 +26,16 @@ import java.util.logging.Logger;
  * Logs incoming and outgoing RTP packets
  */
 @ChannelHandler.Sharable
-public class RtpLoggingHandler extends SimpleChannelInboundHandler<RtpPacket> {
+public class RtpLoggingHandler extends ChannelDuplexHandler {
     private static final Logger s_logger = Logger.getLogger(RtpLoggingHandler.class.getName());
 
     @Override
-    public void messageReceived(final ChannelHandlerContext ctx, final RtpPacket msg)
-            throws Exception {
-        final Level level = getPacketLevel(msg);
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        RtpPacket rtpPacket = (RtpPacket)msg;
+        final Level level = getPacketLevel(rtpPacket);
         if (s_logger.isLoggable(level))
-            s_logger.log(level, ctx.channel().remoteAddress() + "> " + msg.toString());
-        ctx.fireChannelRead(msg);
+            s_logger.log(level, ctx.channel().remoteAddress() + "> " + rtpPacket.toString());
+        ctx.fireChannelRead(rtpPacket);
     }
 
     @Override

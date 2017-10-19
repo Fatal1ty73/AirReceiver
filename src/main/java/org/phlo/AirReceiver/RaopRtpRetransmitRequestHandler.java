@@ -150,7 +150,7 @@ public class RaopRtpRetransmitRequestHandler extends SimpleChannelInboundHandler
      * in-flight retransmit requests.
      *
      * @param sequence        sequence number of packet
-     * @param nextSecondsTime next possible play back time
+     * @param nextSecondsTimee next possible play back time
      */
     private void markRetransmitted(final int sequence, final double nextSecondsTimee) {
         final Iterator<MissingPacket> i = m_missingPackets.iterator();
@@ -278,7 +278,7 @@ public class RaopRtpRetransmitRequestHandler extends SimpleChannelInboundHandler
     }
 
     @Override
-    protected void messageReceived(ChannelHandlerContext ctx, Object msg) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (msg instanceof RaopRtpPacket.AudioTransmit)
             audioTransmitReceived(ctx, (RaopRtpPacket.AudioTransmit) msg);
         else if (msg instanceof RaopRtpPacket.AudioRetransmit)

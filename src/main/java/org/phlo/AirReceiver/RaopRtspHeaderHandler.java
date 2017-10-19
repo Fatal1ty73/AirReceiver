@@ -17,6 +17,7 @@
 
 package org.phlo.AirReceiver;
 
+import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -26,7 +27,7 @@ import io.netty.handler.codec.http.FullHttpResponse;
 /**
  * Adds a few default headers to every RTSP response
  */
-public class RaopRtspHeaderHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
+public class RaopRtspHeaderHandler extends ChannelDuplexHandler {
     private static final String HeaderCSeq = "CSeq";
 
     private static final String HeaderAudioJackStatus = "Audio-Jack-Status";
@@ -40,18 +41,18 @@ public class RaopRtspHeaderHandler extends SimpleChannelInboundHandler<FullHttpR
     private String m_cseq;
 
     @Override
-    public void messageReceived(final ChannelHandlerContext ctx, final FullHttpRequest msg)
+    public void channelRead(final ChannelHandlerContext ctx, final Object msg)
             throws Exception {
-
+        FullHttpRequest fullHttpRequest = (FullHttpRequest)msg;
         synchronized (this) {
-            if (msg.headers().contains(HeaderCSeq)) {
-                m_cseq = msg.headers().getAndConvert(HeaderCSeq);
+            if (fullHttpRequest.headers().contains(HeaderCSeq)) {
+                m_cseq = fullHttpRequest.headers().get(HeaderCSeq);
             } else {
                 throw new ProtocolException("No CSeq header");
             }
         }
-        msg.retain();
-        ctx.fireChannelRead(msg);
+        fullHttpRequest.retain();
+        ctx.fireChannelRead(fullHttpRequest);
     }
 
     @Override

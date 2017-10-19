@@ -190,7 +190,7 @@ public class RaopAudioHandler extends SimpleChannelInboundHandler<FullHttpReques
     }
 
     @Override
-    public void messageReceived(final ChannelHandlerContext ctx, final FullHttpRequest msg) throws Exception {
+    public void channelRead0(final ChannelHandlerContext ctx, final FullHttpRequest msg) throws Exception {
         final HttpMethod method = msg.method();
 
         if (RaopRtspMethods.ANNOUNCE.equals(method)) {
@@ -236,8 +236,8 @@ public class RaopAudioHandler extends SimpleChannelInboundHandler<FullHttpReques
 		/* ANNOUNCE must contain stream information in SDP format */
         if (!req.headers().contains(HttpHeaderNames.CONTENT_TYPE))
             throw new ProtocolException("No Content-Type header");
-        if (!"application/sdp".equals(req.headers().getAndConvert(HttpHeaderNames.CONTENT_TYPE)))
-            throw new ProtocolException("Invalid Content-Type header, expected application/sdp but got " + req.headers().getAndConvert("Content-Type"));
+        if (!"application/sdp".equals(req.headers().get(HttpHeaderNames.CONTENT_TYPE)))
+            throw new ProtocolException("Invalid Content-Type header, expected application/sdp but got " + req.headers().get("Content-Type"));
 
         reset();
 
@@ -362,7 +362,7 @@ public class RaopAudioHandler extends SimpleChannelInboundHandler<FullHttpReques
             throw new ProtocolException("No Transport header");
 
 		/* Split Transport header into individual options and prepare reponse options list */
-        final Deque<String> requestOptions = new java.util.LinkedList<String>(Arrays.asList(req.headers().getAndConvert(HeaderTransport).split(";")));
+        final Deque<String> requestOptions = new java.util.LinkedList<String>(Arrays.asList(req.headers().get(HeaderTransport).split(";")));
         final List<String> responseOptions = new java.util.LinkedList<String>();
 
 		/* Transport header. Protocol must be RTP/AVP/UDP */
@@ -501,7 +501,7 @@ public class RaopAudioHandler extends SimpleChannelInboundHandler<FullHttpReques
             s_logger.info("Header value: " + req.headers().get(HttpHeaderNames.CONTENT_TYPE));
             if (req.headers().get(HttpHeaderNames.CONTENT_TYPE).equals("application/x-dmap-tagged")) {
                 Map<String, String> map = new HashMap<String, String>();
-                DAAPParserUtil.getContent(req.content(), map);
+                DAAPParserUtil.getContent(req.content().copy(), map);
                 CurrentTrack.setSongInfo(SongInfo.createSongInfo(map));
 
             }
@@ -679,7 +679,7 @@ public class RaopAudioHandler extends SimpleChannelInboundHandler<FullHttpReques
     @Sharable
     private class RaopRtpInputToAudioRouterUpstreamHandler extends SimpleChannelInboundHandler {
         @Override
-        public void messageReceived(final ChannelHandlerContext ctx, final Object msg)
+        public void channelRead0(final ChannelHandlerContext ctx, final Object msg)
                 throws Exception {
             /* Get audio channel from the enclosing RaopAudioHandler */
             Channel audioChannel = null;
@@ -696,7 +696,7 @@ public class RaopAudioHandler extends SimpleChannelInboundHandler<FullHttpReques
      * Routes outgoing packets on audio channel to the control or timing
      * channel if appropriate
      */
-    private class RaopRtpAudioToOutputRouterDownstreamHandler extends ChannelHandlerAdapter {
+    private class RaopRtpAudioToOutputRouterDownstreamHandler extends ChannelOutboundHandlerAdapter {
         @Override
         public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
             final RaopRtpPacket packet = (RaopRtpPacket) msg;
@@ -728,7 +728,7 @@ public class RaopAudioHandler extends SimpleChannelInboundHandler<FullHttpReques
      */
     public class RaopRtpAudioEnqueueHandler extends SimpleChannelInboundHandler {
         @Override
-        public void messageReceived(final ChannelHandlerContext ctx, final Object msg)
+        public void channelRead0(final ChannelHandlerContext ctx, final Object msg)
                 throws Exception {
             if (!(msg instanceof RaopRtpPacket.Audio)) {
                 ctx.fireChannelRead(msg);

@@ -22,8 +22,8 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
-import io.netty.handler.codec.rtsp.RtspRequestDecoder;
-import io.netty.handler.codec.rtsp.RtspResponseEncoder;
+import io.netty.handler.codec.rtsp.RtspDecoder;
+import io.netty.handler.codec.rtsp.RtspEncoder;
 
 /**
  * Factory for AirTunes/RAOP RTSP channels
@@ -36,8 +36,8 @@ public class RaopRtspPipelineFactory extends ChannelInitializer {
         ChannelPipeline pipeline = ch.pipeline();
         pipeline.addLast("executionHandler", AirReceiver.ChannelExecutionHandler);
         pipeline.addLast("closeOnShutdownHandler", AirReceiver.CloseChannelOnShutdownHandler);
-        pipeline.addLast("decoder", new RtspRequestDecoder());
-        pipeline.addLast("encoder", new RtspResponseEncoder());
+        pipeline.addLast("decoder", new RtspDecoder());
+        pipeline.addLast("encoder", new RtspEncoder());
         pipeline.addLast("httpServerCodec", new HttpServerCodec());
         pipeline.addLast("httpObjectAggregator", new HttpObjectAggregator(1024 * 1024));
         pipeline.addLast("logger", new RtspLoggingHandler());

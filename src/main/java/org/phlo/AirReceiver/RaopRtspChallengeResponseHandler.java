@@ -17,6 +17,7 @@
 
 package org.phlo.AirReceiver;
 
+import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -32,7 +33,7 @@ import java.nio.ByteBuffer;
  * Adds an {@code Apple-Response} header to a response if the request contain
  * an {@code Apple-Request} header.
  */
-public class RaopRtspChallengeResponseHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
+public class RaopRtspChallengeResponseHandler extends ChannelDuplexHandler {
     private static final String HeaderChallenge = "Apple-Challenge";
     private static final String HeaderSignature = "Apple-Response";
 
@@ -49,12 +50,13 @@ public class RaopRtspChallengeResponseHandler extends SimpleChannelInboundHandle
     }
 
     @Override
-    public void messageReceived(final ChannelHandlerContext ctx, final FullHttpRequest msg)
+    public void channelRead(final ChannelHandlerContext ctx, final Object msg)
             throws Exception {
+        FullHttpRequest fullHttpRequest = (FullHttpRequest)msg;
         synchronized (this) {
-            if (msg.headers().contains(HeaderChallenge)) {
+            if (fullHttpRequest.headers().contains(HeaderChallenge)) {
                 /* The challenge is sent without padding! */
-                final byte[] challenge = Base64.decodeUnpadded(msg.headers().getAndConvert(HeaderChallenge));
+                final byte[] challenge = Base64.decodeUnpadded(fullHttpRequest.headers().get(HeaderChallenge));
 
 				/* Verify that we got 16 bytes */
                 if (challenge.length != 16)
@@ -71,8 +73,8 @@ public class RaopRtspChallengeResponseHandler extends SimpleChannelInboundHandle
                 m_localAddress = null;
             }
         }
-        msg.retain();
-        ctx.fireChannelRead(msg);
+        fullHttpRequest.retain();
+        ctx.fireChannelRead(fullHttpRequest);
     }
 
     @Override

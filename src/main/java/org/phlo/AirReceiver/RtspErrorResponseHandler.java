@@ -42,7 +42,7 @@ public class RtspErrorResponseHandler extends SimpleChannelInboundHandler<FullHt
     private boolean m_messageTriggeredException = false;
 
     @Override
-    public void messageReceived(final ChannelHandlerContext ctx, final FullHttpRequest msg) throws Exception {
+    public void channelRead0(final ChannelHandlerContext ctx, final FullHttpRequest msg) throws Exception {
         synchronized (this) {
             m_messageTriggeredException = false;
         }
