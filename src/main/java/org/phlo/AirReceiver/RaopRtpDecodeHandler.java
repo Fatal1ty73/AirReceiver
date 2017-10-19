@@ -31,22 +31,20 @@ import java.util.logging.Logger;
  */
 @ChannelHandler.Sharable
 public class RaopRtpDecodeHandler extends MessageToMessageDecoder<DatagramPacket> {
-	private static final Logger s_logger = Logger.getLogger(RaopRtpDecodeHandler.class.getName());
+    private static final Logger s_logger = Logger.getLogger(RaopRtpDecodeHandler.class.getName());
 
-	@Override
-	protected void decode(ChannelHandlerContext ctx, DatagramPacket msg, List out) throws Exception
-	{
-		msg.retain();
-			final ByteBuf buffer = msg.content();
+    @Override
+    protected void decode(ChannelHandlerContext ctx, DatagramPacket msg, List out) throws Exception {
+        msg.retain();
+        final ByteBuf buffer = msg.content();
 
-			try {
-				RaopRtpPacket decoded= RaopRtpPacket.decode(buffer);
-				out.add(decoded);
-			}
-			catch (final InvalidPacketException e1) {
-				s_logger.warning(e1.getMessage());
-				out.add(buffer);
-			}
+        try {
+            RaopRtpPacket decoded = RaopRtpPacket.decode(buffer);
+            out.add(decoded);
+        } catch (final InvalidPacketException e1) {
+            s_logger.warning(e1.getMessage());
+            out.add(buffer);
+        }
 
-	}
+    }
 }

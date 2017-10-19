@@ -25,7 +25,7 @@ public class SongInfo {
         this.sort = sort;
     }
 
-    public static SongInfo createSongInfo(Map<String,String> map){
+    public static SongInfo createSongInfo(Map<String, String> map) {
         String album = map.get("asal");
         String artist = map.get("asar");
         String comment = map.get("ascm");

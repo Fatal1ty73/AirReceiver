@@ -27,45 +27,45 @@ import java.util.logging.Logger;
  */
 @ChannelHandler.Sharable
 public class RtpLoggingHandler extends SimpleChannelInboundHandler<RtpPacket> {
-	private static final Logger s_logger = Logger.getLogger(RtpLoggingHandler.class.getName());
+    private static final Logger s_logger = Logger.getLogger(RtpLoggingHandler.class.getName());
 
-	@Override
-	public void messageReceived(final ChannelHandlerContext ctx, final RtpPacket msg)
-		throws Exception {
-		final Level level = getPacketLevel(msg);
-			if (s_logger.isLoggable(level))
-				s_logger.log(level, ctx.channel().remoteAddress() + "> " + msg.toString());
-		ctx.fireChannelRead(msg);
-	}
+    @Override
+    public void messageReceived(final ChannelHandlerContext ctx, final RtpPacket msg)
+            throws Exception {
+        final Level level = getPacketLevel(msg);
+        if (s_logger.isLoggable(level))
+            s_logger.log(level, ctx.channel().remoteAddress() + "> " + msg.toString());
+        ctx.fireChannelRead(msg);
+    }
 
-	@Override
-	public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-		if (msg instanceof RtpPacket) {
-			final RtpPacket packet = (RtpPacket)msg;
+    @Override
+    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+        if (msg instanceof RtpPacket) {
+            final RtpPacket packet = (RtpPacket) msg;
 
-			final Level level = getPacketLevel(packet);
-			if (s_logger.isLoggable(level))
-				s_logger.log(level, ctx.channel().remoteAddress() + "< " + packet.toString());
-		}
-		super.write(ctx, msg, promise.addListener(new ChannelFutureListener() {
-			@Override
-			public void operationComplete(ChannelFuture future) {
-				if (!future.isSuccess()) {
-					s_logger.log(Level.WARNING, future.cause().getMessage());
-				}
-			}
-		}));
-		super.flush(ctx);
-	}
+            final Level level = getPacketLevel(packet);
+            if (s_logger.isLoggable(level))
+                s_logger.log(level, ctx.channel().remoteAddress() + "< " + packet.toString());
+        }
+        super.write(ctx, msg, promise.addListener(new ChannelFutureListener() {
+            @Override
+            public void operationComplete(ChannelFuture future) {
+                if (!future.isSuccess()) {
+                    s_logger.log(Level.WARNING, future.cause().getMessage());
+                }
+            }
+        }));
+        super.flush(ctx);
+    }
 
-	private Level getPacketLevel(final RtpPacket packet) {
-		if (packet instanceof RaopRtpPacket.Audio)
-			return Level.FINEST;
-		else if (packet instanceof RaopRtpPacket.RetransmitRequest)
-			return Level.FINEST;
-		else if (packet instanceof RaopRtpPacket.Timing)
-			return Level.FINEST;
-		else
-			return Level.FINE;
-	}
+    private Level getPacketLevel(final RtpPacket packet) {
+        if (packet instanceof RaopRtpPacket.Audio)
+            return Level.FINEST;
+        else if (packet instanceof RaopRtpPacket.RetransmitRequest)
+            return Level.FINEST;
+        else if (packet instanceof RaopRtpPacket.Timing)
+            return Level.FINEST;
+        else
+            return Level.FINE;
+    }
 }

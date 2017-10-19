@@ -31,37 +31,37 @@ import io.netty.handler.codec.rtsp.RtspVersions;
  * throws an exception.
  */
 public class RtspErrorResponseHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
-	/**
-	 * Prevents an infinite loop that otherwise occurs if
-	 * write()ing the exception response itself triggers
-	 * an exception (which we will then attempt to write(),
-	 * triggering the same exception, ...)
-	 * We avoid that loop by dropping all exception events
-	 * after the first one.
-	 */
-	private boolean m_messageTriggeredException = false;
+    /**
+     * Prevents an infinite loop that otherwise occurs if
+     * write()ing the exception response itself triggers
+     * an exception (which we will then attempt to write(),
+     * triggering the same exception, ...)
+     * We avoid that loop by dropping all exception events
+     * after the first one.
+     */
+    private boolean m_messageTriggeredException = false;
 
-	@Override
+    @Override
     public void messageReceived(final ChannelHandlerContext ctx, final FullHttpRequest msg) throws Exception {
-		synchronized(this) {
-			m_messageTriggeredException = false;
-		}
-		msg.retain();
-ctx.fireChannelRead(msg);
+        synchronized (this) {
+            m_messageTriggeredException = false;
+        }
+        msg.retain();
+        ctx.fireChannelRead(msg);
     }
 
-	@Override
-	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-		synchronized(this) {
-			if (m_messageTriggeredException)
-				return;
-			m_messageTriggeredException = true;
-		}
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        synchronized (this) {
+            if (m_messageTriggeredException)
+                return;
+            m_messageTriggeredException = true;
+        }
 
-		if (ctx.channel().isRegistered()) {
-			final HttpResponse response = new DefaultHttpResponse(RtspVersions.RTSP_1_0,  RtspResponseStatuses.INTERNAL_SERVER_ERROR);
-			ctx.channel().writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
-		}
-		super.exceptionCaught(ctx, cause);
-	}
+        if (ctx.channel().isRegistered()) {
+            final HttpResponse response = new DefaultHttpResponse(RtspVersions.RTSP_1_0, RtspResponseStatuses.INTERNAL_SERVER_ERROR);
+            ctx.channel().writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+        }
+        super.exceptionCaught(ctx, cause);
+    }
 }

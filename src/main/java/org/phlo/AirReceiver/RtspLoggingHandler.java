@@ -29,77 +29,74 @@ import java.util.logging.Logger;
 /**
  * Logs RTSP requests and responses.
  */
-public class RtspLoggingHandler extends SimpleChannelInboundHandler<FullHttpRequest>
-{
-	private static final Logger s_logger = Logger.getLogger(RtspLoggingHandler.class.getName());
+public class RtspLoggingHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
+    private static final Logger s_logger = Logger.getLogger(RtspLoggingHandler.class.getName());
 
-	@Override
-	public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
-		super.channelRegistered(ctx);
-		s_logger.info("Client " + ctx.channel().remoteAddress() + " connected on " + ctx.channel().localAddress());
-	}
-
+    @Override
+    public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
+        super.channelRegistered(ctx);
+        s_logger.info("Client " + ctx.channel().remoteAddress() + " connected on " + ctx.channel().localAddress());
+    }
 
 
-	@Override
-	public void messageReceived(final ChannelHandlerContext ctx, final FullHttpRequest msg)
-		throws Exception
-	{
-		final Level level = Level.INFO;
-		if (s_logger.isLoggable(level)) {
-			String content = msg.content().toString(Charset.defaultCharset());
+    @Override
+    public void messageReceived(final ChannelHandlerContext ctx, final FullHttpRequest msg)
+            throws Exception {
+        final Level level = Level.INFO;
+        if (s_logger.isLoggable(level)) {
+            String content = msg.content().toString(Charset.defaultCharset());
 
 
-			final StringBuilder s = new StringBuilder();
-			s.append(">");
-			s.append(msg.method());
-			s.append(" ");
-			s.append(msg.uri());
-			s.append("\n");
-			for(final Map.Entry<String, String> header: msg.headers().entriesConverted()) {
-				s.append("  ");
-				s.append(header.getKey());
-				s.append(": ");
-				s.append(header.getValue());
-				s.append("\n");
-			}
-			s.append(content);
-			s_logger.log(Level.INFO, s.toString());
-		}
-		msg.retain();
-		ctx.fireChannelRead(msg);
-	}
+            final StringBuilder s = new StringBuilder();
+            s.append(">");
+            s.append(msg.method());
+            s.append(" ");
+            s.append(msg.uri());
+            s.append("\n");
+            for (final Map.Entry<String, String> header : msg.headers().entriesConverted()) {
+                s.append("  ");
+                s.append(header.getKey());
+                s.append(": ");
+                s.append(header.getValue());
+                s.append("\n");
+            }
+            s.append(content);
+            s_logger.log(Level.INFO, s.toString());
+        }
+        msg.retain();
+        ctx.fireChannelRead(msg);
+    }
 
-	@Override
-	public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-		final FullHttpResponse resp = (FullHttpResponse)msg;
+    @Override
+    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+        final FullHttpResponse resp = (FullHttpResponse) msg;
 
-		final Level level = Level.INFO;
-		if (s_logger.isLoggable(level)) {
-			final StringBuilder s = new StringBuilder();
-			s.append("<");
-			s.append(resp.status().code());
-			s.append(" ");
-			s.append(resp.status().reasonPhrase());
-			s.append("\n");
-			for(final Map.Entry<String, String> header: resp.headers().entriesConverted()) {
-				s.append("  ");
-				s.append(header.getKey());
-				s.append(": ");
-				s.append(header.getValue());
-				s.append("\n");
-			}
-			s_logger.log(Level.INFO, s.toString());
-		}
+        final Level level = Level.INFO;
+        if (s_logger.isLoggable(level)) {
+            final StringBuilder s = new StringBuilder();
+            s.append("<");
+            s.append(resp.status().code());
+            s.append(" ");
+            s.append(resp.status().reasonPhrase());
+            s.append("\n");
+            for (final Map.Entry<String, String> header : resp.headers().entriesConverted()) {
+                s.append("  ");
+                s.append(header.getKey());
+                s.append(": ");
+                s.append(header.getValue());
+                s.append("\n");
+            }
+            s_logger.log(Level.INFO, s.toString());
+        }
 
-		super.write(ctx, msg, promise.addListener(new ChannelFutureListener() {
-			@Override
-			public void operationComplete(ChannelFuture future) {
-				if (!future.isSuccess()) {
-					s_logger.log(Level.WARNING, future.cause().getMessage());
-				}
-			}
-		}));
-		super.flush(ctx);
-	}
+        super.write(ctx, msg, promise.addListener(new ChannelFutureListener() {
+            @Override
+            public void operationComplete(ChannelFuture future) {
+                if (!future.isSuccess()) {
+                    s_logger.log(Level.WARNING, future.cause().getMessage());
+                }
+            }
+        }));
+        super.flush(ctx);
+    }
 }

@@ -32,112 +32,76 @@ import java.util.logging.Logger;
  * sync packet.
  */
 public class RaopRtpTimingHandler extends SimpleChannelInboundHandler {
-	private static Logger s_logger = Logger.getLogger(RaopRtpTimingHandler.class.getName());
+    /**
+     * Number of seconds between {@link TimingRequest}s.
+     */
+    public static final double TimeRequestInterval = 0.2;
+    private static Logger s_logger = Logger.getLogger(RaopRtpTimingHandler.class.getName());
+    /**
+     * Audio time source
+     */
+    private final AudioClock m_audioClock;
+    /**
+     * Exponential averager used to smooth the remote seconds offset
+     */
+    private final RunningExponentialAverage m_remoteSecondsOffset = new RunningExponentialAverage();
+    /**
+     * The {@link TimingRequester} thread.
+     */
+    private Thread m_synchronizationThread;
 
-	/**
-	 * Number of seconds between {@link TimingRequest}s.
-	 */
-	public static final double TimeRequestInterval = 0.2;
+    public RaopRtpTimingHandler(final AudioClock audioClock) {
+        m_audioClock = audioClock;
+    }
 
-	/**
-	 * Thread which sends out {@link TimingRequests}s.
-	 */
-	private class TimingRequester implements Runnable {
-		private final Channel m_channel;
-
-		public TimingRequester(final Channel channel) {
-			m_channel = channel;
-		}
-
-		@Override
-		public void run() {
-			while (!Thread.currentThread().isInterrupted()) {
-				final RaopRtpPacket.TimingRequest timingRequestPacket = new RaopRtpPacket.TimingRequest();
-				timingRequestPacket.getReceivedTime().setDouble(0); /* Set by the source */
-				timingRequestPacket.getReferenceTime().setDouble(0); /* Set by the source */
-				timingRequestPacket.getSendTime().setDouble(m_audioClock.getNowSecondsTime());
-
-				m_channel.write(timingRequestPacket);
-				try {
-					Thread.sleep(Math.round(TimeRequestInterval * 1000));
-				}
-				catch (final InterruptedException e) {
-					Thread.currentThread().interrupt();
-				}
-			}
-		}
-	}
-
-	/**
-	 * Audio time source
-	 */
-	private final AudioClock m_audioClock;
-	
-	/**
-	 * Exponential averager used to smooth the remote seconds offset
-	 */
-	private final RunningExponentialAverage m_remoteSecondsOffset = new RunningExponentialAverage();
-	
-	/**
-	 * The {@link TimingRequester} thread.
-	 */
-	private Thread m_synchronizationThread;
-
-	public RaopRtpTimingHandler(final AudioClock audioClock) {
-		m_audioClock = audioClock;
-	}
-
-	@Override
-	public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
-		channelUnregistered(ctx);
+    @Override
+    public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
+        channelUnregistered(ctx);
 
 		/* Start synchronization thread if it isn't already running */
-		if (m_synchronizationThread == null) {
-			m_synchronizationThread = new Thread(new TimingRequester(ctx.channel()));
-			m_synchronizationThread.setDaemon(true);
-			m_synchronizationThread.setName("Time Synchronizer");
-			m_synchronizationThread.start();
-			s_logger.fine("Time synchronizer started");
-		}
-		super.channelRegistered(ctx);
-	}
+        if (m_synchronizationThread == null) {
+            m_synchronizationThread = new Thread(new TimingRequester(ctx.channel()));
+            m_synchronizationThread.setDaemon(true);
+            m_synchronizationThread.setName("Time Synchronizer");
+            m_synchronizationThread.start();
+            s_logger.fine("Time synchronizer started");
+        }
+        super.channelRegistered(ctx);
+    }
 
-	@Override
-	public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
-		super.channelUnregistered(ctx);
-		synchronized(this) {
-			if (m_synchronizationThread != null)
-				m_synchronizationThread.interrupt();
-		}
-	}
+    @Override
+    public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
+        super.channelUnregistered(ctx);
+        synchronized (this) {
+            if (m_synchronizationThread != null)
+                m_synchronizationThread.interrupt();
+        }
+    }
 
+    @Override
+    public void messageReceived(final ChannelHandlerContext ctx, final Object msg)
+            throws Exception {
+        if (msg instanceof RaopRtpPacket.Sync)
+            syncReceived((RaopRtpPacket.Sync) msg);
+        else if (msg instanceof RaopRtpPacket.TimingResponse)
+            timingResponseReceived((RaopRtpPacket.TimingResponse) msg);
 
+        ctx.fireChannelRead(msg);
+    }
 
-	@Override
-	public void messageReceived(final ChannelHandlerContext ctx, final Object msg)
-		throws Exception
-	{
-		if (msg instanceof RaopRtpPacket.Sync)
-			syncReceived((RaopRtpPacket.Sync)msg);
-		else if (msg instanceof RaopRtpPacket.TimingResponse)
-			timingResponseReceived((RaopRtpPacket.TimingResponse)msg);
-
-		ctx.fireChannelRead(msg);
-	}
-
-	private synchronized void timingResponseReceived(final RaopRtpPacket.TimingResponse timingResponsePacket) {
-		final double localReceiveSecondsTime = m_audioClock.getNowSecondsTime();
+    private synchronized void timingResponseReceived(final RaopRtpPacket.TimingResponse timingResponsePacket) {
+        final double localReceiveSecondsTime = m_audioClock.getNowSecondsTime();
 
 		/* Compute remove seconds offset, assuming that the transmission times of
-		 * the timing requests and the timing response are equal
+         * the timing requests and the timing response are equal
 		 */
-		final double localSecondsTime =
-			localReceiveSecondsTime * 0.5 +
-			timingResponsePacket.getReferenceTime().getDouble() * 0.5;
-		final double remoteSecondsTime =
-			timingResponsePacket.getReceivedTime().getDouble() * 0.5 +
-			timingResponsePacket.getSendTime().getDouble() * 0.5;
-		final double remoteSecondsOffset = remoteSecondsTime - localSecondsTime;
+        final double localSecondsTime =
+                localReceiveSecondsTime * 0.5 +
+                        timingResponsePacket.getReferenceTime().getDouble() * 0.5;
+        final double remoteSecondsTime =
+                timingResponsePacket.getReceivedTime().getDouble() * 0.5 +
+                        timingResponsePacket.getSendTime().getDouble() * 0.5;
+        final double remoteSecondsOffset = remoteSecondsTime - localSecondsTime;
 
 		/*
 		 * Compute the overall transmission time, and use that to compute
@@ -147,59 +111,86 @@ public class RaopRtpTimingHandler extends SimpleChannelInboundHandler {
 		 * measure those independently, but since they're obviously bound
 		 * by the total transmission time (request + response), which we
 		 * <b>can</b> measure, we can use that to judge the quality.
-		 * 
+		 *
 		 * The constants are picked such that the weight is never larger than
 		 * 1e-3, and starts to decrease rapidly for transmission times significantly
 		 * larger than 1ms.
 		 */
-		final double localInterval =
-			localReceiveSecondsTime -
-			timingResponsePacket.getReferenceTime().getDouble();
-		final double remoteInterval =
-			timingResponsePacket.getSendTime().getDouble() -
-			timingResponsePacket.getReceivedTime().getDouble();
-		final double transmissionTime = Math.max(localInterval - remoteInterval, 0);
-		final double weight = 1e-6 / (transmissionTime + 1e-3);
+        final double localInterval =
+                localReceiveSecondsTime -
+                        timingResponsePacket.getReferenceTime().getDouble();
+        final double remoteInterval =
+                timingResponsePacket.getSendTime().getDouble() -
+                        timingResponsePacket.getReceivedTime().getDouble();
+        final double transmissionTime = Math.max(localInterval - remoteInterval, 0);
+        final double weight = 1e-6 / (transmissionTime + 1e-3);
 
 		/* Update exponential average */
-		final double remoteSecondsOffsetPrevious = (!m_remoteSecondsOffset.isEmpty() ? m_remoteSecondsOffset.get() : 0.0);
-		m_remoteSecondsOffset.add(remoteSecondsOffset, weight);
-		final double secondsTimeAdjustment = m_remoteSecondsOffset.get() - remoteSecondsOffsetPrevious;
+        final double remoteSecondsOffsetPrevious = (!m_remoteSecondsOffset.isEmpty() ? m_remoteSecondsOffset.get() : 0.0);
+        m_remoteSecondsOffset.add(remoteSecondsOffset, weight);
+        final double secondsTimeAdjustment = m_remoteSecondsOffset.get() - remoteSecondsOffsetPrevious;
 
-		s_logger.finest("Timing response with weight " + weight + " indicated offset " + remoteSecondsOffset + " thereby adjusting the averaged offset by " + secondsTimeAdjustment + " leading to the new averaged offset " + m_remoteSecondsOffset.get());
-	}
+        s_logger.finest("Timing response with weight " + weight + " indicated offset " + remoteSecondsOffset + " thereby adjusting the averaged offset by " + secondsTimeAdjustment + " leading to the new averaged offset " + m_remoteSecondsOffset.get());
+    }
 
-	private synchronized void syncReceived(final RaopRtpPacket.Sync syncPacket) {
-		if (!m_remoteSecondsOffset.isEmpty()) {
+    private synchronized void syncReceived(final RaopRtpPacket.Sync syncPacket) {
+        if (!m_remoteSecondsOffset.isEmpty()) {
 			/* If the times are synchronized, we can correct for the transmission
 			 * time of the sync packet since it contains the time it was sent as
 			 * a source's NTP time.
 			 */
-			m_audioClock.setFrameTime(
-				syncPacket.getTimeStampMinusLatency(),
-				convertRemoteToLocalSecondsTime(syncPacket.getTime().getDouble())
-			);
-		}
-		else {
+            m_audioClock.setFrameTime(
+                    syncPacket.getTimeStampMinusLatency(),
+                    convertRemoteToLocalSecondsTime(syncPacket.getTime().getDouble())
+            );
+        } else {
 			/* If the times aren't yet synchronized, we simply assume the sync
 			 * packet's transmission time is zero.
 			 */
-			m_audioClock.setFrameTime(
-				syncPacket.getTimeStampMinusLatency(),
-				0.0
-			);
-			s_logger.warning("Times synchronized, cannot correct latency of sync packet");
-		}
-	}
+            m_audioClock.setFrameTime(
+                    syncPacket.getTimeStampMinusLatency(),
+                    0.0
+            );
+            s_logger.warning("Times synchronized, cannot correct latency of sync packet");
+        }
+    }
 
-	/**
-	 * Convert remote NTP time (in seconds) to local NTP time (in seconds),
-	 * using the offset obtain from the TimingRequest/TimingResponse packets.
-	 * 
-	 * @param remoteSecondsTime remote NTP time
-	 * @return local NTP time
-	 */
-	private double convertRemoteToLocalSecondsTime(final double remoteSecondsTime) {
-		return remoteSecondsTime - m_remoteSecondsOffset.get();
-	}
+    /**
+     * Convert remote NTP time (in seconds) to local NTP time (in seconds),
+     * using the offset obtain from the TimingRequest/TimingResponse packets.
+     *
+     * @param remoteSecondsTime remote NTP time
+     * @return local NTP time
+     */
+    private double convertRemoteToLocalSecondsTime(final double remoteSecondsTime) {
+        return remoteSecondsTime - m_remoteSecondsOffset.get();
+    }
+
+    /**
+     * Thread which sends out {@link TimingRequests}s.
+     */
+    private class TimingRequester implements Runnable {
+        private final Channel m_channel;
+
+        public TimingRequester(final Channel channel) {
+            m_channel = channel;
+        }
+
+        @Override
+        public void run() {
+            while (!Thread.currentThread().isInterrupted()) {
+                final RaopRtpPacket.TimingRequest timingRequestPacket = new RaopRtpPacket.TimingRequest();
+                timingRequestPacket.getReceivedTime().setDouble(0); /* Set by the source */
+                timingRequestPacket.getReferenceTime().setDouble(0); /* Set by the source */
+                timingRequestPacket.getSendTime().setDouble(m_audioClock.getNowSecondsTime());
+
+                m_channel.write(timingRequestPacket);
+                try {
+                    Thread.sleep(Math.round(TimeRequestInterval * 1000));
+                } catch (final InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+    }
 }

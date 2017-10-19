@@ -35,30 +35,29 @@ import io.netty.handler.codec.rtsp.RtspVersions;
  * Apple-Response
  */
 public class RaopRtspOptionsHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
-	private static final String Options =
-		RaopRtspMethods.ANNOUNCE.name() + ", " +
-		RaopRtspMethods.SETUP.name() + ", " +
-		RaopRtspMethods.RECORD.name() + ", " +
-		RaopRtspMethods.PAUSE.name() + ", " +
-		RaopRtspMethods.FLUSH.name() + ", " +
-		RtspMethods.TEARDOWN.name() + ", " +
-		RaopRtspMethods.OPTIONS.name() + ", " +
-		RaopRtspMethods.GET_PARAMETER.name() + ", " +
-		RaopRtspMethods.SET_PARAMETER.name();
+    private static final String Options =
+            RaopRtspMethods.ANNOUNCE.name() + ", " +
+                    RaopRtspMethods.SETUP.name() + ", " +
+                    RaopRtspMethods.RECORD.name() + ", " +
+                    RaopRtspMethods.PAUSE.name() + ", " +
+                    RaopRtspMethods.FLUSH.name() + ", " +
+                    RtspMethods.TEARDOWN.name() + ", " +
+                    RaopRtspMethods.OPTIONS.name() + ", " +
+                    RaopRtspMethods.GET_PARAMETER.name() + ", " +
+                    RaopRtspMethods.SET_PARAMETER.name();
 
-	@Override
-	public void messageReceived(final ChannelHandlerContext ctx, final FullHttpRequest msg) throws Exception {
+    @Override
+    public void messageReceived(final ChannelHandlerContext ctx, final FullHttpRequest msg) throws Exception {
 
 
-		if (RtspMethods.OPTIONS.equals(msg.method())) {
+        if (RtspMethods.OPTIONS.equals(msg.method())) {
 
-			final FullHttpResponse response = new DefaultFullHttpResponse(RtspVersions.RTSP_1_0, RtspResponseStatuses.OK);
-	        response.headers().set(RtspHeaderNames.PUBLIC, Options);
-			ctx.write(response);
-		}
-		else {
-			msg.retain();
-			ctx.fireChannelRead(msg);
-		}
-	}
+            final FullHttpResponse response = new DefaultFullHttpResponse(RtspVersions.RTSP_1_0, RtspResponseStatuses.OK);
+            response.headers().set(RtspHeaderNames.PUBLIC, Options);
+            ctx.write(response);
+        } else {
+            msg.retain();
+            ctx.fireChannelRead(msg);
+        }
+    }
 }

@@ -31,23 +31,23 @@ import io.netty.handler.codec.rtsp.RtspResponseEncoder;
 public class RaopRtspPipelineFactory extends ChannelInitializer {
 
 
-	@Override
-	protected void initChannel(Channel ch) throws Exception {
-		ChannelPipeline pipeline = ch.pipeline();
-		pipeline.addLast("executionHandler", AirReceiver.ChannelExecutionHandler);
-		pipeline.addLast("closeOnShutdownHandler", AirReceiver.CloseChannelOnShutdownHandler);
-		pipeline.addLast("decoder", new RtspRequestDecoder());
-		pipeline.addLast("encoder", new RtspResponseEncoder());
-		pipeline.addLast("httpServerCodec",new HttpServerCodec());
-		pipeline.addLast("httpObjectAggregator",new HttpObjectAggregator(1024*1024));
-		pipeline.addLast("logger", new RtspLoggingHandler());
-		pipeline.addLast("challengeResponse", new RaopRtspChallengeResponseHandler(AirReceiver.HardwareAddressBytes));
-		pipeline.addLast("header", new RaopRtspHeaderHandler());
-		pipeline.addLast("options", new RaopRtspOptionsHandler());
-		pipeline.addLast("audio", new RaopAudioHandler(AirReceiver.ExecutorService));
-		pipeline.addLast("unsupportedResponse", new RtspUnsupportedResponseHandler());
-		pipeline.addLast("errorResponse", new RtspErrorResponseHandler());
-		pipeline.addLast("exceptionLogger", new ExceptionLoggingHandler());
+    @Override
+    protected void initChannel(Channel ch) throws Exception {
+        ChannelPipeline pipeline = ch.pipeline();
+        pipeline.addLast("executionHandler", AirReceiver.ChannelExecutionHandler);
+        pipeline.addLast("closeOnShutdownHandler", AirReceiver.CloseChannelOnShutdownHandler);
+        pipeline.addLast("decoder", new RtspRequestDecoder());
+        pipeline.addLast("encoder", new RtspResponseEncoder());
+        pipeline.addLast("httpServerCodec", new HttpServerCodec());
+        pipeline.addLast("httpObjectAggregator", new HttpObjectAggregator(1024 * 1024));
+        pipeline.addLast("logger", new RtspLoggingHandler());
+        pipeline.addLast("challengeResponse", new RaopRtspChallengeResponseHandler(AirReceiver.HardwareAddressBytes));
+        pipeline.addLast("header", new RaopRtspHeaderHandler());
+        pipeline.addLast("options", new RaopRtspOptionsHandler());
+        pipeline.addLast("audio", new RaopAudioHandler(AirReceiver.ExecutorService));
+        pipeline.addLast("unsupportedResponse", new RtspUnsupportedResponseHandler());
+        pipeline.addLast("errorResponse", new RtspErrorResponseHandler());
+        pipeline.addLast("exceptionLogger", new ExceptionLoggingHandler());
 
-	}
+    }
 }

@@ -29,11 +29,11 @@ import java.util.logging.Logger;
  */
 @ChannelHandler.Sharable
 public class ExceptionLoggingHandler extends ChannelHandlerAdapter {
-	private static Logger s_logger = Logger.getLogger(ExceptionLoggingHandler.class.getName());
+    private static Logger s_logger = Logger.getLogger(ExceptionLoggingHandler.class.getName());
 
-	@Override
-	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-		s_logger.log(Level.WARNING, "Handler raised exception", cause);
-	}
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        s_logger.log(Level.WARNING, "Handler raised exception", cause);
+    }
 
 }

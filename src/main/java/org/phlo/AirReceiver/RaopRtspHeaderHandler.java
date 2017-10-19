@@ -26,49 +26,46 @@ import io.netty.handler.codec.http.FullHttpResponse;
 /**
  * Adds a few default headers to every RTSP response
  */
-public class RaopRtspHeaderHandler extends SimpleChannelInboundHandler<FullHttpRequest>
-{
-	private static final String HeaderCSeq = "CSeq";
+public class RaopRtspHeaderHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
+    private static final String HeaderCSeq = "CSeq";
 
-	private static final String HeaderAudioJackStatus = "Audio-Jack-Status";
-	private static final String HeaderAudioJackStatusDefault = "connected; type=analog";
+    private static final String HeaderAudioJackStatus = "Audio-Jack-Status";
+    private static final String HeaderAudioJackStatusDefault = "connected; type=analog";
 
 	/*
-	private static final String HeaderAudioLatency = "Audio-Latency";
+    private static final String HeaderAudioLatency = "Audio-Latency";
 	private static final long   HeaderAudioLatencyFrames = 88400;
 	*/
 
-	private String m_cseq;
+    private String m_cseq;
 
-	@Override
-	public void messageReceived(final ChannelHandlerContext ctx, final FullHttpRequest msg)
-		throws Exception
-	{
+    @Override
+    public void messageReceived(final ChannelHandlerContext ctx, final FullHttpRequest msg)
+            throws Exception {
 
-		synchronized(this) {
-			if (msg.headers().contains(HeaderCSeq)) {
-				m_cseq = msg.headers().getAndConvert(HeaderCSeq);
-			}
-			else {
-				throw new ProtocolException("No CSeq header");
-			}
-		}
-msg.retain();
-		ctx.fireChannelRead(msg);
-	}
+        synchronized (this) {
+            if (msg.headers().contains(HeaderCSeq)) {
+                m_cseq = msg.headers().getAndConvert(HeaderCSeq);
+            } else {
+                throw new ProtocolException("No CSeq header");
+            }
+        }
+        msg.retain();
+        ctx.fireChannelRead(msg);
+    }
 
-	@Override
-	public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-		final FullHttpResponse resp = (FullHttpResponse)msg;
+    @Override
+    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+        final FullHttpResponse resp = (FullHttpResponse) msg;
 
-		synchronized(this) {
-			if (m_cseq != null)
-				resp.headers().set(HeaderCSeq, m_cseq);
+        synchronized (this) {
+            if (m_cseq != null)
+                resp.headers().set(HeaderCSeq, m_cseq);
 
-			resp.headers().set(HeaderAudioJackStatus, HeaderAudioJackStatusDefault);
-			//resp.setHeader(HeaderAudioLatency, Long.toString(HeaderAudioLatencyFrames));
-		}
-		super.write(ctx, msg, promise);
-	}
+            resp.headers().set(HeaderAudioJackStatus, HeaderAudioJackStatusDefault);
+            //resp.setHeader(HeaderAudioLatency, Long.toString(HeaderAudioLatencyFrames));
+        }
+        super.write(ctx, msg, promise);
+    }
 
 }

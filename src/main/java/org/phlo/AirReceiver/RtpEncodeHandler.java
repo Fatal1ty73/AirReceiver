@@ -30,11 +30,11 @@ import java.util.List;
 @ChannelHandler.Sharable
 public class RtpEncodeHandler extends MessageToMessageEncoder {
 
-	@Override
-	protected void encode(ChannelHandlerContext ctx, Object msg, List out) throws Exception {
-		if (msg instanceof RtpPacket) {
-			ByteBuf buff = ((RtpPacket) msg).getBuffer();
-			out.add(buff);
-		}
-	}
+    @Override
+    protected void encode(ChannelHandlerContext ctx, Object msg, List out) throws Exception {
+        if (msg instanceof RtpPacket) {
+            ByteBuf buff = ((RtpPacket) msg).getBuffer();
+            out.add(buff);
+        }
+    }
 }

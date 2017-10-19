@@ -32,16 +32,16 @@ import java.util.logging.Logger;
  * takes responsibility for a RTSP message.
  */
 public class RtspUnsupportedResponseHandler extends SimpleChannelInboundHandler {
-	private static Logger s_logger = Logger.getLogger(RtspUnsupportedResponseHandler.class.getName());
+    private static Logger s_logger = Logger.getLogger(RtspUnsupportedResponseHandler.class.getName());
 
 
-	@Override
-	protected void messageReceived(ChannelHandlerContext ctx, Object msg) throws Exception {
-		final HttpRequest req = (HttpRequest)msg;
+    @Override
+    protected void messageReceived(ChannelHandlerContext ctx, Object msg) throws Exception {
+        final HttpRequest req = (HttpRequest) msg;
 
-		s_logger.warning("Method " + req.method() + " is not supported");
+        s_logger.warning("Method " + req.method() + " is not supported");
 
-		final HttpResponse response = new DefaultHttpResponse(RtspVersions.RTSP_1_0,  RtspResponseStatuses.METHOD_NOT_VALID);
-		ctx.channel().write(response);
-	}
+        final HttpResponse response = new DefaultHttpResponse(RtspVersions.RTSP_1_0, RtspResponseStatuses.METHOD_NOT_VALID);
+        ctx.channel().write(response);
+    }
 }
