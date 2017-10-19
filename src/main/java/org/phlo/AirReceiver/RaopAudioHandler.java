@@ -501,7 +501,7 @@ public class RaopAudioHandler extends SimpleChannelInboundHandler<FullHttpReques
             s_logger.info("Header value: " + req.headers().get(HttpHeaderNames.CONTENT_TYPE));
             if (req.headers().get(HttpHeaderNames.CONTENT_TYPE).equals("application/x-dmap-tagged")) {
                 Map<String, String> map = new HashMap<String, String>();
-                DAAPParserUtil.getContent(req.content(), map);
+                DAAPParserUtil.getContent(req.content().copy(), map);
                 CurrentTrack.setSongInfo(SongInfo.createSongInfo(map));
 
             }

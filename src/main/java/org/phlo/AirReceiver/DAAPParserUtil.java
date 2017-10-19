@@ -10,27 +10,32 @@ final class DAAPParserUtil {
     public static Map<String, String> getContent(ByteBuf buf, Map<String, String> map) {
         if (buf.isReadable()) {
             String code = getCode(buf.readBytes(4));
-            int lenght = getLenght(buf.readBytes(4).nioBuffer());
+            int lenght = getLength(buf.readBytes(4));
 
             if (code.equals("mlit")) {
                 map.put(code, "");
-                getContent(buf.readBytes(lenght), map);
+                getContent(buf.readSlice(lenght), map);
             } else {
                 String value = getCode(buf.readBytes(lenght));
                 map.put(code, value);
                 getContent(buf, map);
             }
         }
+        if(buf.refCnt() != 0) {
+            buf.release();
+        }
         return map;
     }
 
-    private static String getCode(ByteBuf code) {
-
-        return code.toString(Charset.forName("UTF-8"));
+    private static String getCode(ByteBuf arr) {
+        String code = arr.toString(Charset.forName("UTF-8"));
+        arr.release();
+        return code;
     }
 
-    private static int getLenght(ByteBuffer arr) {
-        int size = arr.getInt();
+    private static int getLength(ByteBuf arr) {
+        int size = arr.readInt();
+        arr.release();
         return size;
     }
 }
